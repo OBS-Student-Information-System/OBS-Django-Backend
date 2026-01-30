@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../OBS-Flutter-App"
+		},
+		{
+			"path": "../OBS-Docs"
+		},
+		{
+			"path": "../OBS-Web-Frontend"
+		}
+	],
+	"settings": {}
+}
