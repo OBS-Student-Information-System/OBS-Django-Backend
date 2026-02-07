@@ -8,9 +8,6 @@
 		},
 		{
 			"path": "../OBS-Docs"
-		},
-		{
-			"path": "../OBS-Web-Frontend"
 		}
 	],
 	"settings": {}
