@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../OBS-Docs"
+		},
+		{
+			"path": "../OBS-Configs"
 		}
 	],
 	"settings": {}
