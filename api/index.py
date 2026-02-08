@@ -159,6 +159,136 @@ class OBSClient:
                 "message": f"Sunucu hatası: {str(e)}",
                 "error_code": "SERVER_ERROR"
             }
+    
+    def fetch_grades(self, term_id=None):
+        """
+        Fetch grades from OBS grades page.
+        Args:
+            term_id: Optional semester ID (e.g., "20241", "20242"). If provided, will change semester before fetching.
+        Returns list of grade dictionaries or error.
+        """
+        try:
+            from api.grades_parser import parse_grades_table
+            
+            # Update referer header
+            self.session.headers.update({"Referer": self.GRADES_URL})
+            
+            # First, GET the page to get hidden inputs
+            initial_response = self.session.get(self.GRADES_URL)
+            
+            if initial_response.status_code != 200:
+                return {
+                    "success": False,
+                    "message": "Not listesine erişilemedi",
+                    "error_code": "GRADES_PAGE_ERROR"
+                }
+            
+            # If term_id is provided, POST to change semester
+            if term_id:
+                print(f"[GRADES] Changing to semester: {term_id}")
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(initial_response.content, 'html.parser')
+                
+                # Get hidden inputs for POST
+                hidden_data = self._get_hidden_inputs(soup)
+                hidden_data.update({
+                    "__EVENTTARGET": "cmbDonemler",
+                    "__EVENTARGUMENT": "",
+                    "cmbDonemler": term_id
+                })
+                
+                # POST to change semester
+                response = self.session.post(self.GRADES_URL, data=hidden_data)
+                print(f"[GRADES] Semester change response: {response.status_code}")
+            else:
+                response = initial_response
+            
+            print(f"[GRADES] Response status: {response.status_code}")
+            print(f"[GRADES] Response length: {len(response.text)} chars")
+            
+            # Parse the grades table
+            grades_list = parse_grades_table(response.text)
+            
+            print(f"[GRADES] Parsed {len(grades_list)} grades")
+            if grades_list:
+                print(f"[GRADES] First grade: {grades_list[0]}")
+            
+            return {
+                "success": True,
+                "data": grades_list,
+                "message": f"{len(grades_list)} ders notu bulundu"
+            }
+            
+        except Exception as e:
+            print(f"[GRADES ERROR] {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return {
+                "success": False,
+                "message": f"Not listesi parse hatası: {str(e)}",
+                "error_code": "PARSE_ERROR"
+            }
+    
+    def get_available_terms(self):
+        """
+        Get list of available semesters from OBS dropdown.
+        Returns list of term objects with id and name.
+        """
+        try:
+            from bs4 import BeautifulSoup
+            
+            # Update referer header
+            self.session.headers.update({"Referer": self.GRADES_URL})
+            
+            # GET grades page to access dropdown
+            response = self.session.get(self.GRADES_URL)
+            
+            if response.status_code != 200:
+                return {
+                    "success": False,
+                    "message": "Dönem listesi alınamadı",
+                    "error_code": "TERMS_PAGE_ERROR"
+                }
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Find the semester dropdown
+            term_select = soup.find('select', id='cmbDonemler')
+            if not term_select:
+                return {
+                    "success": False,
+                    "message": "Dönem dropdown'ı bulunamadı",
+                    "error_code": "DROPDOWN_NOT_FOUND"
+                }
+            
+            # Parse all options
+            terms = []
+            for option in term_select.find_all('option'):
+                term_id = option.get('value')
+                term_name = option.get_text(strip=True)
+                if term_id and term_name:
+                    terms.append({
+                        "term_id": term_id,
+                        "term_name": term_name
+                    })
+            
+            print(f"[TERMS] Found {len(terms)} semesters")
+            
+            return {
+                "success": True,
+                "data": terms,
+                "message": f"{len(terms)} dönem bulundu"
+            }
+            
+        except Exception as e:
+            print(f"[TERMS ERROR] {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return {
+                "success": False,
+                "message": f"Dönem listesi parse hatası: {str(e)}",
+                "error_code": "PARSE_ERROR"
+            }
 
 # --- HANDLER ---
 class handler(BaseHTTPRequestHandler):
@@ -200,6 +330,69 @@ class handler(BaseHTTPRequestHandler):
                     self._send_response(401, {
                         "status": "error", 
                         "message": result.get('message'), 
+                        "error_code": result.get('error_code')
+                    })
+            
+            elif action == 'get_grades':
+                # Get grades with authenticated session
+                cookies = body.get('cookies', {})
+                term_id = body.get('term_id')  # Optional semester ID
+                
+                if not cookies:
+                    self._send_response(401, {
+                        "status": "error",
+                        "message": "Oturum bilgisi gerekli (cookies)",
+                        "error_code": "NO_SESSION"
+                    })
+                    return
+                
+                # Restore session cookies
+                client.set_cookies(cookies)
+                
+                # Fetch grades (with optional term_id)
+                result = client.fetch_grades(term_id=term_id)
+                
+                if result.get('success'):
+                    self._send_response(200, {
+                        "status": "success",
+                        "data": result.get('data', []),
+                        "message": result.get('message')
+                    })
+                else:
+                    self._send_response(500, {
+                        "status": "error",
+                        "message": result.get('message'),
+                        "error_code": result.get('error_code')
+                    })
+            
+            elif action == 'get_available_terms':
+                # Get available semesters from dropdown
+                cookies = body.get('cookies', {})
+                
+                if not cookies:
+                    self._send_response(401, {
+                        "status": "error",
+                        "message": "Oturum bilgisi gerekli (cookies)",
+                        "error_code": "NO_SESSION"
+                    })
+                    return
+                
+                # Restore session cookies
+                client.set_cookies(cookies)
+                
+                # Fetch available terms
+                result = client.get_available_terms()
+                
+                if result.get('success'):
+                    self._send_response(200, {
+                        "status": "success",
+                        "data": result.get('data', []),
+                        "message": result.get('message')
+                    })
+                else:
+                    self._send_response(500, {
+                        "status": "error",
+                        "message": result.get('message'),
                         "error_code": result.get('error_code')
                     })
             
