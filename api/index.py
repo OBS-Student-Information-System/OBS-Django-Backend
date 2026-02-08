@@ -85,10 +85,71 @@ class OBSClient:
         except Exception as e:
             return {"error": f"Backend Hatasi: {str(e)}"}
 
-    # ... (Diğer metodlar: attempt_login, fetch_grades_data aynen kalabilir) ...
-    # Kısalık olsun diye attempt_login ve fetch_grades_data'yı buraya tekrar yapıştırmıyorum.
-    # Onları silme sakın! Sadece fetch_login_page'i güncelle.
-    # Eğer emin değilsen söyle tam halini atayım.
+    def attempt_login(self, username, password, captcha_code, view_state_data):
+        """
+        Attempts login to OBS using scraped viewstate and captcha.
+        
+        Returns:
+            dict: Standard envelope with success/error
+        """
+        try:
+            # Prepare POST data matching ASP.NET form structure
+            login_data = {
+                **view_state_data,  # Include all hidden inputs (__VIEWSTATE, etc.)
+                'txtKullaniciAdi': username,
+                'txtSifre': password,
+                'txtResimDogrulamaKodu': captcha_code,
+                'btnGiris': 'Giriş'  # Button name that triggers login
+            }
+            
+            # POST to login page (allow_redirects=False to detect redirect)
+            response = self.session.post(self.LOGIN_URL, data=login_data, allow_redirects=False)
+            
+            # Case 1: Successful login (redirect to dashboard)
+            if response.status_code == 302:
+                redirect_url = response.headers.get('Location', '')
+                # Successful login redirects away from login.aspx
+                if 'login.aspx' not in redirect_url.lower():
+                    return {
+                        "success": True,
+                        "message": "Giriş başarılı",
+                        "cookies": self.get_cookies()
+                    }
+            
+            # Case 2: Login failed (stayed on same page with error)
+            soup = BeautifulSoup(response.content, 'html.parser')
+            error_elem = soup.find(id='lblSonuclar')
+            
+            if error_elem and error_elem.text.strip():
+                error_text = error_elem.text.strip()
+                
+                # Determine error type
+                if 'Güvenlik kodu hatalı' in error_text or 'captcha' in error_text.lower():
+                    error_code = 'INVALID_CAPTCHA'
+                elif 'Kullanıcı adı veya şifresi geçersiz' in error_text or 'geçersiz' in error_text.lower():
+                    error_code = 'INVALID_CREDENTIALS'
+                else:
+                    error_code = 'LOGIN_FAILED'
+                
+                return {
+                    "success": False,
+                    "message": error_text,
+                    "error_code": error_code
+                }
+            
+            # Case 3: Unknown failure (no error message, no redirect)
+            return {
+                "success": False,
+                "message": "Giriş başarısız. Lütfen tekrar deneyin.",
+                "error_code": "UNKNOWN_ERROR"
+            }
+            
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Sunucu hatası: {str(e)}",
+                "error_code": "SERVER_ERROR"
+            }
 
 # --- HANDLER ---
 class handler(BaseHTTPRequestHandler):
@@ -109,8 +170,32 @@ class handler(BaseHTTPRequestHandler):
                 else:
                      self._send_response(200, {"status": "success", "data": data})
 
-            # ... Diğer action'lar (login, get_grades) buraya gelecek ...
-            # Önceki kodundaki handler mantığının aynısı.
+            elif action == 'login':
+                # Extract request data
+                username = body.get('username')
+                password = body.get('password')
+                captcha = body.get('captcha')
+                view_state_data = body.get('view_state_data', {})
+                cookies = body.get('cookies', {})
+                
+                # Restore cookies from init_login (relay mechanism)
+                client.set_cookies(cookies)
+                
+                # Attempt login
+                result = client.attempt_login(username, password, captcha, view_state_data)
+                
+                if result.get('success'):
+                    self._send_response(200, {"status": "success", "data": result})
+                else:
+                    # Return 401 for auth failures, but still valid JSON
+                    self._send_response(401, {
+                        "status": "error", 
+                        "message": result.get('message'), 
+                        "error_code": result.get('error_code')
+                    })
+            
+            else:
+                self._send_response(400, {"status": "error", "message": f"Unknown action: {action}"})
 
         except Exception as e:
             self._send_response(500, {"status": "error", "message": str(e)})
