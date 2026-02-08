@@ -1,7 +1,7 @@
 from http.server import BaseHTTPRequestHandler
 import json
-from modules.auth.scraper import AuthScraper
-from modules.grades.scraper import GradesScraper
+from modules.auth.service import AuthService
+from modules.grades.service import GradesService
 from core.logger import setup_logger
 
 logger = setup_logger("api.index")
@@ -16,11 +16,11 @@ class handler(BaseHTTPRequestHandler):
             
             logger.info(f"Received request action: {action}")
             
-            # Shared session for stateful operations (restored from cookies)
-            auth_scraper = AuthScraper()
+            # Using Service Layer
+            auth_service = AuthService()
             
             if action == 'init_login':
-                data = auth_scraper.fetch_login_page()
+                data = auth_service.prepare_login()
                 if "error" in data:
                      self._send_response(500, {"status": "error", "message": data['error']})
                 else:
@@ -33,11 +33,10 @@ class handler(BaseHTTPRequestHandler):
                 view_state_data = body.get('view_state_data', {})
                 cookies = body.get('cookies', {})
                 
-                # Restore session
-                if cookies:
-                    auth_scraper.session.cookies.update(cookies)
+                # Update session via service
+                auth_service.update_session_cookies(cookies)
                 
-                result = auth_scraper.attempt_login(username, password, captcha, view_state_data)
+                result = auth_service.login(username, password, captcha, view_state_data)
                 
                 if result.get('success'):
                     self._send_response(200, {"status": "success", "data": result})
@@ -57,11 +56,11 @@ class handler(BaseHTTPRequestHandler):
                     self._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
                     return
                 
-                # Initialize grades scraper with restored session
-                grades_scraper = GradesScraper()
-                grades_scraper.session.cookies.update(cookies)
+                # Using Grades Service
+                grades_service = GradesService()
+                grades_service.update_session_cookies(cookies)
                 
-                result = grades_scraper.fetch_grades(term_id)
+                result = grades_service.get_grades(term_id)
                 self._send_json_response(result)
             
             elif action == 'get_available_terms':
@@ -72,10 +71,10 @@ class handler(BaseHTTPRequestHandler):
                     self._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
                     return
                 
-                grades_scraper = GradesScraper()
-                grades_scraper.session.cookies.update(cookies)
+                grades_service = GradesService()
+                grades_service.update_session_cookies(cookies)
                 
-                result = grades_scraper.get_available_terms()
+                result = grades_service.get_terms()
                 self._send_json_response(result)
             
             else:
