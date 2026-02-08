@@ -94,13 +94,22 @@ class OBSClient:
         """
         try:
             # Prepare POST data matching ASP.NET form structure
+            # CRITICAL: Field names MUST match actual OBS form (from terminal project)
             login_data = {
                 **view_state_data,  # Include all hidden inputs (__VIEWSTATE, etc.)
-                'txtKullaniciAdi': username,
-                'txtSifre': password,
-                'txtResimDogrulamaKodu': captcha_code,
-                'btnGiris': 'Giriş'  # Button name that triggers login
+                'txtParamT01': username,      # OBS uses txtParamT01 for username
+                'txtParamT02': password,      # OBS uses txtParamT02 for password
+                'txtParamT1': password,       # Also required (duplicate)
+                'txtSecCode': captcha_code,   # OBS uses txtSecCode for captcha
+                '__EVENTTARGET': 'btnLogin',  # Trigger button via event target
+                '__EVENTARGUMENT': '',
+                'txt_scrWidth': '1920',       # Screen resolution (optional)
+                'txt_scrHeight': '1080'
             }
+            
+            # Remove btnLogin if exists in viewstate (conflicts with __EVENTTARGET)
+            if 'btnLogin' in login_data:
+                del login_data['btnLogin']
             
             # POST to login page (allow_redirects=False to detect redirect)
             response = self.session.post(self.LOGIN_URL, data=login_data, allow_redirects=False)
