@@ -2,6 +2,7 @@ from http.server import BaseHTTPRequestHandler
 import json
 from modules.auth.service import AuthService
 from modules.grades.service import GradesService
+from modules.calendar.service import CalendarService
 from core.logger import setup_logger
 
 logger = setup_logger("api.index")
@@ -16,7 +17,7 @@ class handler(BaseHTTPRequestHandler):
             
             logger.info(f"Received request action: {action}")
             
-            # Using Service Layer
+            # Initialize Services
             auth_service = AuthService()
             
             if action == 'init_login':
@@ -56,7 +57,6 @@ class handler(BaseHTTPRequestHandler):
                     self._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
                     return
                 
-                # Using Grades Service
                 grades_service = GradesService()
                 grades_service.update_session_cookies(cookies)
                 
@@ -76,6 +76,14 @@ class handler(BaseHTTPRequestHandler):
                 
                 result = grades_service.get_terms()
                 self._send_json_response(result)
+
+            elif action == 'get_academic_calendar':
+                # Calendar is public, no cookies needed (for now, unless scraping requires auth)
+                # But our scraper is mock, so it's fine.
+                calendar_service = CalendarService()
+                calendar_data = calendar_service.get_calendar()
+                
+                self._send_response(200, {"status": "success", "data": calendar_data})
             
             else:
                 logger.warning(f"Unknown action: {action}")
