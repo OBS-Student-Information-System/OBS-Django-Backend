@@ -78,10 +78,11 @@ class handler(BaseHTTPRequestHandler):
                 self._send_json_response(result)
 
             elif action == 'get_academic_calendar':
-                # Calendar is public, no cookies needed (for now, unless scraping requires auth)
-                # But our scraper is mock, so it's fine.
+                # Calendar page requires auth cookies
+                cookies = body.get('cookies', {})
+                
                 calendar_service = CalendarService()
-                calendar_data = calendar_service.get_calendar()
+                calendar_data = calendar_service.get_calendar(cookies=cookies)
                 
                 self._send_response(200, {"status": "success", "data": calendar_data})
             
