@@ -98,6 +98,23 @@ class AuthScraper:
                 logger.info(f"Redirect detected to: {redirect_url}")
                 
                 if 'login.aspx' not in redirect_url.lower():
+                    # CRITICAL FIX: Follow the redirect (start.aspx?gkm=...) to fully activate the session
+                    # Many ASP.NET apps require visiting the landing page with the token to set final cookies
+                    
+                    # If redirect URL starts with /, it's already an absolute path from domain root
+                    if redirect_url.startswith('/'):
+                        full_redirect_url = f"https://obs.ozal.edu.tr{redirect_url}"
+                    else:
+                        full_redirect_url = fix_url(redirect_url)
+                    
+                    logger.info(f"Following redirect to finalize authentication: {full_redirect_url}")
+                    
+                    try:
+                        self.session.get(full_redirect_url)
+                        logger.info("Successfully visited landing page.")
+                    except Exception as e:
+                        logger.warning(f"Failed to follow redirect: {e}")
+
                     return {
                         "success": True,
                         "message": "Giriş başarılı",

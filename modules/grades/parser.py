@@ -78,7 +78,7 @@ def parse_grades_table(html_content: str) -> List[Dict]:
             grades_list.append(grade_obj)
             
         except Exception as e:
-            print(f"Warning: Failed to parse grade row - {e}")
+            logger.warning(f"Failed to parse grade row: {e}")
             continue
     
     return grades_list

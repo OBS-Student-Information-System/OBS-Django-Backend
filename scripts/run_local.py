@@ -10,6 +10,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from http.server import HTTPServer
 from api.index import handler
+import logging
+
+# Configure root logger to print to stdout
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 
 if __name__ == "__main__":
     PORT = 8000

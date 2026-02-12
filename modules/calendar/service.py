@@ -8,6 +8,17 @@ class CalendarService:
         self.calendar_url = "https://obs.ozal.edu.tr/oibs/std/st_akademik_takvim.aspx"
 
     def get_calendar(self, cookies: Dict[str, str] = None) -> List[Dict[str, Any]]:
+        """Fetches academic calendar events from OBS.
+        
+        Args:
+            cookies: Optional authentication cookies for session validation.
+            
+        Returns:
+            List of calendar event dictionaries containing title, start_date, end_date.
+            
+        Raises:
+            Exception: If session is invalid, calendar cannot be parsed, or network fails.
+        """
         try:
             # Attempt to fetch the live page
             headers = {
@@ -46,5 +57,5 @@ class CalendarService:
                 raise Exception(f"Failed to fetch calendar. Status Code: {response.status_code}")
             
         except Exception as e:
-            print(f"Error fetching calendar: {e}")
+            logger.error(f"Error fetching calendar: {e}")
             raise e # Fail loudly as requested

@@ -2,7 +2,9 @@ from http.server import BaseHTTPRequestHandler
 import json
 from modules.auth.service import AuthService
 from modules.grades.service import GradesService
+from modules.grades.service import GradesService
 from modules.calendar.service import CalendarService
+from modules.schedule.service import ScheduleService
 from core.logger import setup_logger
 
 logger = setup_logger("api.index")
@@ -85,6 +87,18 @@ class handler(BaseHTTPRequestHandler):
                 calendar_data = calendar_service.get_calendar(cookies=cookies)
                 
                 self._send_response(200, {"status": "success", "data": calendar_data})
+
+            elif action == 'get_schedule':
+                cookies = body.get('cookies', {})
+                if not cookies:
+                     self._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
+                     return
+
+                schedule_service = ScheduleService()
+                schedule_service.update_session_cookies(cookies)
+                schedule_data = schedule_service.get_schedule()
+                
+                self._send_response(200, {"status": "success", "data": schedule_data})
             
             else:
                 logger.warning(f"Unknown action: {action}")
