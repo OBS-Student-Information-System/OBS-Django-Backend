@@ -35,7 +35,7 @@ def parse_my_grades(raw_text: str) -> Dict[str, Optional[str]]:
 
 def parse_grades_table(html_content: str) -> List[Dict]:
     """Parse the main grades table from OBS HTML."""
-    soup = BeautifulSoup(html_content, 'html.parser')
+    soup = BeautifulSoup(html_content, 'lxml')
     
     table = soup.find(id=SELECTORS["GRADES_TABLE"])
     if not table:

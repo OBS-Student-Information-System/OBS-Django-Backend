@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 
 class CalendarScraper:
     def parse_calendar_table(self, html_content: str) -> List[Dict[str, Any]]:
-        soup = BeautifulSoup(html_content, 'html.parser')
+        soup = BeautifulSoup(html_content, 'lxml')
         events = []
         
         table = soup.find('table', {'id': 'grd'})

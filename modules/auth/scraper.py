@@ -30,7 +30,7 @@ class AuthScraper:
                 logger.error(f"Failed to fetch login page. Status: {r.status_code}")
                 return {"error": f"Siteye erişilemedi. Status: {r.status_code}"}
 
-            soup = BeautifulSoup(r.content, "html.parser")
+            soup = BeautifulSoup(r.content, "lxml")
             title = soup.title.string if soup.title else "Baslik Yok"
             logger.debug(f"Page title: {title}")
 
@@ -124,7 +124,7 @@ class AuthScraper:
                     logger.warning("Redirected back to login.aspx.")
             
             # Case 2: Login Failed (Stayed on page, check for error message)
-            soup = BeautifulSoup(response.content, 'html.parser')
+            soup = BeautifulSoup(response.content, 'lxml')
             error_elem = soup.find(id=SELECTORS["LOGIN_ERROR_LABEL"])
             
             error_text = error_elem.text.strip() if error_elem else ""

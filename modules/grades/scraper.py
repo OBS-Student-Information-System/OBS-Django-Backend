@@ -36,7 +36,7 @@ class GradesScraper:
             # Change semester if requested
             if term_id:
                 logger.info(f"Switching semester to {term_id}...")
-                soup = BeautifulSoup(response.content, 'html.parser')
+                soup = BeautifulSoup(response.content, 'lxml')
                 hidden_data = get_hidden_inputs(soup)
                 
                 hidden_data.update({
@@ -74,7 +74,7 @@ class GradesScraper:
                 logger.error(f"Terms page access failed. Status: {response.status_code}")
                 return {"success": False, "message": "Dönem listesi alınamadı", "error_code": "TERMS_PAGE_ERROR"}
 
-            soup = BeautifulSoup(response.content, 'html.parser')
+            soup = BeautifulSoup(response.content, 'lxml')
             term_select = soup.find('select', id=SELECTORS["TERM_DROPDOWN"])
             
             if not term_select:

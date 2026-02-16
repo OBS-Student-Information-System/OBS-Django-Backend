@@ -11,7 +11,7 @@ class ScheduleScraper:
         Parses the schedule HTML and returns a dictionary of days (1-7).
         1: Monday, ..., 7: Sunday
         """
-        soup = BeautifulSoup(html_content, 'html.parser')
+        soup = BeautifulSoup(html_content, 'lxml')
         schedule = {}
 
         # Days mapping based on grid IDs in the provided HTML
