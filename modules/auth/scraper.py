@@ -168,21 +168,45 @@ class AuthScraper:
 
     def _scrape_student_name(self, dashboard_url: str) -> str:
         """
-        Helper to scrape student name from the dashboard/landing page.
+        Helper to scrape student name. Tries multiple potential dashboard URLs.
         """
         try:
-            r = self.session.get(dashboard_url)
-            if r.status_code == 200:
-                soup = BeautifulSoup(r.content, "lxml")
-                # Try specific ID first
-                name_elem = soup.find(id=SELECTORS.get("STUDENT_NAME", "lblAdSoyad"))
-                if name_elem:
-                    return name_elem.text.strip()
+            # 1. Try the redirect URL first
+            targets = [dashboard_url]
+            
+            # 2. Add standard OBS dashboard paths
+            base_url = "https://obs.ozal.edu.tr/oibs/std/"
+            targets.append(f"{base_url}index.aspx?curOp=0") # User provided specific URL
+            targets.append(f"{base_url}default.aspx")
+            targets.append(f"{base_url}index.aspx")
+            
+            headers = {
+                 "Referer": "https://obs.ozal.edu.tr/oibs/std/login.aspx"
+            }
+
+            for url in targets:
+                if not url: continue
                 
-                # Fallback: Try looking for common span classes
-                span = soup.find("span", class_="user-name")
-                if span:
-                    return span.text.strip()
+                try:
+                    logger.debug(f"Scraping name from: {url}")
+                    r = self.session.get(url, headers=headers)
+                    if r.status_code == 200:
+                        soup = BeautifulSoup(r.content, "lxml")
+                        # Try specific ID first
+                        name_elem = soup.find(id=SELECTORS.get("STUDENT_NAME", "lblOgrenciAdSoyad"))
+                        if name_elem and name_elem.text.strip():
+                            logger.info(f"Check 1: Found name via ID in {url}")
+                            return name_elem.text.strip()
+                        
+                        # Fallback: Try bold span inside header if ID fails
+                        # Some OBS versions put name in a span under .user-info
+                        span = soup.find("span", class_="user-name")
+                        if span:
+                            logger.info(f"Check 2: Found name via class in {url}")
+                            return span.text.strip()
+                except Exception as e:
+                    logger.warning(f"Failed attempt for {url}: {e}")
+                    continue
                 
         except Exception as e:
             logger.warning(f"Failed to scrape student name: {e}")
