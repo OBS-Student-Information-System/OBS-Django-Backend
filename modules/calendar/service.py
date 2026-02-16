@@ -17,23 +17,15 @@ class CalendarService:
             # internal session setup
             session = create_session()
             
-            # Update referer to simulate navigation from main body
+            # Update referer to simulate navigation (Grades pattern)
             session.headers.update({
-                'Referer': 'https://obs.ozal.edu.tr/oibs/std/main_body.aspx'
+                'Referer': self.calendar_url
             })
 
             if cookies:
                 session.cookies.update(cookies)
 
-            # 1. Visit main_body first to validate/refresh the session
-            try:
-                session.get(
-                    "https://obs.ozal.edu.tr/oibs/std/main_body.aspx", 
-                    timeout=5
-                )
-            except Exception as e:
-                logger.warning(f"Main body refresh failed: {e}")
-                # Continue anyway, initial cookies might still be valid
+
 
             # 2. Fetch Calendar
             response = session.get(self.calendar_url, timeout=10)
