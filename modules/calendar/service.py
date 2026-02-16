@@ -1,6 +1,10 @@
-import requests
+import logging
 from typing import List, Dict, Any
 from .scraper import CalendarScraper
+
+logger = logging.getLogger(__name__)
+
+import requests
 
 class CalendarService:
     def __init__(self):
