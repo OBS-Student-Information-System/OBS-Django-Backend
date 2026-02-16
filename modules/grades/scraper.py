@@ -51,10 +51,19 @@ class GradesScraper:
             # Parse
             grades_list = parse_grades_table(response.text)
             logger.info(f"Parsed {len(grades_list)} grades.")
+
+            # Scrape GPA (AGNO)
+            soup = BeautifulSoup(response.content, 'lxml')
+            gpa = "0.00"
+            gpa_elem = soup.find(id=SELECTORS.get("GPA_LABEL"))
             
+            if gpa_elem:
+                gpa = gpa_elem.text.strip().replace(',', '.') 
+
             return {
                 "success": True,
                 "data": grades_list,
+                "gpa": gpa, # Return GPA
                 "message": f"{len(grades_list)} ders notu bulundu"
             }
             

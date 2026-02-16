@@ -118,7 +118,8 @@ class AuthScraper:
                     return {
                         "success": True,
                         "message": "Giriş başarılı",
-                        "cookies": requests.utils.dict_from_cookiejar(self.session.cookies)
+                        "cookies": requests.utils.dict_from_cookiejar(self.session.cookies),
+                        "student_name": self._scrape_student_name(full_redirect_url)
                     }
                 else:
                     logger.warning("Redirected back to login.aspx.")
@@ -164,4 +165,27 @@ class AuthScraper:
                 "message": f"Sunucu hatası: {str(e)}",
                 "error_code": "SERVER_ERROR"
             }
+
+    def _scrape_student_name(self, dashboard_url: str) -> str:
+        """
+        Helper to scrape student name from the dashboard/landing page.
+        """
+        try:
+            r = self.session.get(dashboard_url)
+            if r.status_code == 200:
+                soup = BeautifulSoup(r.content, "lxml")
+                # Try specific ID first
+                name_elem = soup.find(id=SELECTORS.get("STUDENT_NAME", "lblAdSoyad"))
+                if name_elem:
+                    return name_elem.text.strip()
+                
+                # Fallback: Try looking for common span classes
+                span = soup.find("span", class_="user-name")
+                if span:
+                    return span.text.strip()
+                
+        except Exception as e:
+            logger.warning(f"Failed to scrape student name: {e}")
+        
+        return "Öğrenci"
 

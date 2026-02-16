@@ -29,7 +29,9 @@ SELECTORS = {
     "PASSWORD_FIELD_ALT": "txtParamT1",
     "CAPTCHA_FIELD": "txtSecCode",
     "SCREEN_WIDTH": "txt_scrWidth",
-    "SCREEN_HEIGHT": "txt_scrHeight"
+    "SCREEN_HEIGHT": "txt_scrHeight",
+    "STUDENT_NAME": "lblOgrenciAdSoyad",  # CORRECTED per User Request
+    "GPA_LABEL": "lblAGNO",               # CORRECTED per User Request (AGNO only)
 }
 
 # HATA MESAJLARI (Backend'den dönen raw stringler)
