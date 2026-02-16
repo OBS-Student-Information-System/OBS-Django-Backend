@@ -171,14 +171,10 @@ class AuthScraper:
         Helper to scrape student name. Tries multiple potential dashboard URLs.
         """
         try:
-            # 1. Try the redirect URL first
-            targets = [dashboard_url]
-            
             # 2. Add standard OBS dashboard paths
             base_url = "https://obs.ozal.edu.tr/oibs/std/"
-            targets.append(f"{base_url}index.aspx?curOp=0") # User provided specific URL
-            targets.append(f"{base_url}default.aspx")
-            targets.append(f"{base_url}index.aspx")
+            # Prioritize the user-provided specific URL
+            targets = [f"{base_url}index.aspx?curOp=0", dashboard_url, f"{base_url}default.aspx", f"{base_url}index.aspx"]
             
             headers = {
                  "Referer": "https://obs.ozal.edu.tr/oibs/std/login.aspx"
@@ -189,7 +185,8 @@ class AuthScraper:
                 
                 try:
                     logger.debug(f"Scraping name from: {url}")
-                    r = self.session.get(url, headers=headers)
+                    # ADDED TIMEOUT to prevent freezing
+                    r = self.session.get(url, headers=headers, timeout=5)
                     if r.status_code == 200:
                         soup = BeautifulSoup(r.content, "lxml")
                         # Try specific ID first
