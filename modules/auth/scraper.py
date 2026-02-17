@@ -24,7 +24,7 @@ class AuthScraper:
         """
         try:
             logger.info("Fetching login page...")
-            r = self.session.get(LOGIN_URL)
+            r = self.session.get(LOGIN_URL, timeout=30)
             
             if r.status_code != 200:
                 logger.error(f"Failed to fetch login page. Status: {r.status_code}")
@@ -89,7 +89,7 @@ class AuthScraper:
             # Remove conflicting button key if exists
             login_data.pop(SELECTORS["LOGIN_BTN"], None)
             
-            response = self.session.post(LOGIN_URL, data=login_data, allow_redirects=False)
+            response = self.session.post(LOGIN_URL, data=login_data, allow_redirects=False, timeout=45)
             logger.debug(f"Login POST status: {response.status_code}")
             
             # Case 1: Successful login (Redirect)
@@ -110,7 +110,7 @@ class AuthScraper:
                     logger.info(f"Following redirect to finalize authentication: {full_redirect_url}")
                     
                     try:
-                        self.session.get(full_redirect_url)
+                        self.session.get(full_redirect_url, timeout=30)
                         logger.info("Successfully visited landing page.")
                     except Exception as e:
                         logger.warning(f"Failed to follow redirect: {e}")
@@ -186,7 +186,7 @@ class AuthScraper:
                 try:
                     logger.debug(f"Scraping name from: {url}")
                     # ADDED TIMEOUT to prevent freezing
-                    r = self.session.get(url, headers=headers, timeout=5)
+                    r = self.session.get(url, headers=headers, timeout=15)
                     if r.status_code == 200:
                         soup = BeautifulSoup(r.content, "lxml")
                         # Try specific ID first
