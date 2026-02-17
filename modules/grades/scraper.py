@@ -28,7 +28,7 @@ class GradesScraper:
             logger.info(f"Fetching grades. Term ID: {term_id if term_id else 'Default'}")
 
             # Initial GET to load page and ViewState
-            response = self.session.get(GRADES_URL)
+            response = self.session.get(GRADES_URL, timeout=10)
             if response.status_code != 200:
                 logger.error(f"Grades page access failed. Status: {response.status_code}")
                 return {"success": False, "message": "Not listesine erişilemedi", "error_code": "GRADES_PAGE_ERROR"}
@@ -45,7 +45,7 @@ class GradesScraper:
                     SELECTORS["TERM_DROPDOWN"]: term_id
                 })
                 
-                response = self.session.post(GRADES_URL, data=hidden_data)
+                response = self.session.post(GRADES_URL, data=hidden_data, timeout=10)
                 logger.debug(f"Semester switch response status: {response.status_code}")
 
             # Parse
