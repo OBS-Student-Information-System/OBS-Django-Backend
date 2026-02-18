@@ -18,7 +18,6 @@ class handler(BaseHTTPRequestHandler):
             action = body.get('action')
             
             logger.info(f"Received request action: {action}")
-            logger.debug(f"Request Body: {body}")
             
             # Initialize Services
             auth_service = AuthService()
