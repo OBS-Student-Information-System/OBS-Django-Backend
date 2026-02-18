@@ -54,10 +54,10 @@ class GradesScraper:
 
             # Scrape GPA (AGNO)
             soup = BeautifulSoup(response.content, 'lxml')
-            gpa = "0.00"
+            gpa = None
             gpa_elem = soup.find(id=SELECTORS.get("GPA_LABEL"))
             
-            if gpa_elem:
+            if gpa_elem and gpa_elem.text.strip():
                 gpa = gpa_elem.text.strip().replace(',', '.') 
 
             return {
