@@ -111,6 +111,17 @@ class handler(BaseHTTPRequestHandler):
                 result = transcript_service.get_transcript()
                 
                 self._send_json_response(result)
+
+            elif action == 'food_menu':
+                # Public endpoint, no cookies needed
+                menu_url = body.get('menu_url')
+                
+                # Dynamic import to avoid circular dependencies if any
+                from modules.food.service import FoodService
+                food_service = FoodService()
+                
+                result = food_service.get_daily_menu(menu_url)
+                self._send_json_response(result)
             
             else:
                 logger.warning(f"Unknown action: {action}")
