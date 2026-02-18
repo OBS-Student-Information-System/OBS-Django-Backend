@@ -23,13 +23,14 @@ class FoodScraper:
         """
         try:
             logger.info(f"Fetching food menu from: {url}")
-            response = self.session.get(url, timeout=15)
+            # SSL Verification disabled due to certificate issues
+            response = self.session.get(url, timeout=15, verify=False)
             
             if response.status_code != 200:
                 logger.error(f"Failed to fetch menu. Status: {response.status_code}")
                 return {"error": f"Menüye erişilemedi. Hata kodu: {response.status_code}"}
 
-            soup = BeautifulSoup(response.content, 'lxml')
+            soup = BeautifulSoup(response.content, 'html.parser')
             
             # Parser Logic matching the user's provided HTML snippet:
             # <div class="box"><div class="box__content"><p>FOOD NAME</p></div></div>
