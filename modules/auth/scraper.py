@@ -121,7 +121,8 @@ class AuthScraper:
                         "message": "Giriş başarılı",
                         "cookies": requests.utils.dict_from_cookiejar(self.session.cookies),
                         "student_name": student_info.get("name", "Öğrenci"),
-                        "profile_photo": student_info.get("profile_photo")
+                        "profile_photo": student_info.get("profile_photo"),
+                        "gpa": student_info.get("gpa")
                     }
                 else:
                     logger.warning("Redirected back to login.aspx.")
@@ -170,14 +171,17 @@ class AuthScraper:
 
     def _scrape_student_info(self, dashboard_url: str) -> Dict[str, Any]:
         """
-        Helper to scrape student name and profile photo from the dashboard page.
-        Returns a dict with 'name' (str) and optionally 'profile_photo' (base64 str).
+        Helper to scrape student name, profile photo, and GPA (AGNO) from the dashboard page.
+        Returns a dict with 'name', 'profile_photo', and 'gpa'.
         """
-        result = {"name": "Öğrenci", "profile_photo": None}
+        result = {"name": "Öğrenci", "profile_photo": None, "gpa": None}
         
         try:
-            base_url = "https://obs.ozal.edu.tr/oibs/std/"
-            targets = [f"{base_url}index.aspx?curOp=0", dashboard_url, f"{base_url}default.aspx", f"{base_url}index.aspx"]
+            # We explicitly want to check the dashboard for AGNO
+            from core.config import DASHBOARD_URL
+            
+            # Prioritize DASHBOARD_URL for AGNO
+            targets = [DASHBOARD_URL, dashboard_url]
             
             headers = {
                  "Referer": "https://obs.ozal.edu.tr/oibs/std/login.aspx"
@@ -189,40 +193,50 @@ class AuthScraper:
                 try:
                     logger.debug(f"Scraping student info from: {url}")
                     r = self.session.get(url, headers=headers, timeout=15)
+                    
                     if r.status_code == 200:
                         soup = BeautifulSoup(r.content, "lxml")
                         
                         # --- Student Name ---
-                        name_elem = soup.find(id=SELECTORS.get("STUDENT_NAME", "lblOgrenciAdSoyad"))
-                        if name_elem and name_elem.text.strip():
-                            result["name"] = name_elem.text.strip()
-                            logger.info(f"Found name via ID in {url}")
-                        else:
-                            span = soup.find("span", class_="user-name")
-                            if span:
-                                result["name"] = span.text.strip()
-                                logger.info(f"Found name via class in {url}")
+                        if result["name"] == "Öğrenci":
+                            name_elem = soup.find(id=SELECTORS.get("STUDENT_NAME", "lblOgrenciAdSoyad"))
+                            if name_elem and name_elem.text.strip():
+                                result["name"] = name_elem.text.strip()
+                                logger.info(f"Found name: {result['name']}")
                             else:
-                                continue  # Try next URL
+                                span = soup.find("span", class_="user-name")
+                                if span:
+                                    result["name"] = span.text.strip()
                         
+                        # --- GPA (AGNO) ---
+                        # Format: "AGNO: 3,32" -> "3.32"
+                        if result["gpa"] is None:
+                            gpa_elem = soup.find(id=SELECTORS.get("GPA_LABEL", "lblAGNO"))
+                            if gpa_elem and gpa_elem.text.strip():
+                                raw_gpa = gpa_elem.text.strip()
+                                # Clean string: remove "AGNO:", replace comma with dot
+                                clean_gpa = raw_gpa.replace("AGNO:", "").replace("AGNO", "").strip().replace(",", ".")
+                                result["gpa"] = clean_gpa
+                                logger.info(f"Found AGNO: {clean_gpa}")
+
                         # --- Profile Photo ---
-                        photo_elem = soup.find(id=SELECTORS.get("PROFILE_PHOTO_IMG", "imgPhoto"))
-                        if photo_elem:
-                            photo_src = photo_elem.get("src")
-                            if photo_src:
-                                photo_url = fix_url(photo_src)
-                                try:
-                                    photo_response = self.session.get(photo_url, timeout=10)
-                                    if photo_response.status_code == 200 and len(photo_response.content) > 100:
-                                        result["profile_photo"] = base64.b64encode(photo_response.content).decode('utf-8')
-                                        logger.info(f"Profile photo downloaded. Size: {len(photo_response.content)} bytes")
-                                    else:
-                                        logger.warning(f"Profile photo response invalid. Status: {photo_response.status_code}, Size: {len(photo_response.content)}")
-                                except Exception as e:
-                                    logger.warning(f"Failed to download profile photo: {e}")
+                        if result["profile_photo"] is None:
+                            photo_elem = soup.find(id=SELECTORS.get("PROFILE_PHOTO_IMG", "imgPhoto"))
+                            if photo_elem:
+                                photo_src = photo_elem.get("src")
+                                if photo_src:
+                                    photo_url = fix_url(photo_src)
+                                    try:
+                                        photo_response = self.session.get(photo_url, timeout=10)
+                                        if photo_response.status_code == 200 and len(photo_response.content) > 100:
+                                            result["profile_photo"] = base64.b64encode(photo_response.content).decode('utf-8')
+                                            logger.info("Profile photo downloaded.")
+                                    except Exception as e:
+                                        logger.warning(f"Failed to download profile photo: {e}")
                         
-                        # If we got the name, no need to try other URLs
-                        break
+                        # If we have name and GPA, we can stop (photo is bonus)
+                        if result["name"] != "Öğrenci" and result["gpa"] is not None:
+                            break
                         
                 except Exception as e:
                     logger.warning(f"Failed attempt for {url}: {e}")

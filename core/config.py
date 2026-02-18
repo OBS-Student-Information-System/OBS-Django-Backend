@@ -5,6 +5,7 @@ Configuration constants for OBS Backend.
 # URL SABİTLERİ
 BASE_URL = "https://obs.ozal.edu.tr/oibs/std/"
 LOGIN_URL = "https://obs.ozal.edu.tr/oibs/std/login.aspx"
+DASHBOARD_URL = "https://obs.ozal.edu.tr/oibs/std/duyuru_new.aspx" # AGNO here
 GRADES_URL = "https://obs.ozal.edu.tr/oibs/std/not_listesi_op.aspx"
 SCHEDULE_URL = "https://obs.ozal.edu.tr/oibs/std/ders_programi.aspx" # Future use
 
