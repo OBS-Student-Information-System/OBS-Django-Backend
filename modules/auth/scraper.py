@@ -115,11 +115,13 @@ class AuthScraper:
                     except Exception as e:
                         logger.warning(f"Failed to follow redirect: {e}")
 
+                    student_info = self._scrape_student_info(full_redirect_url)
                     return {
                         "success": True,
                         "message": "Giriş başarılı",
                         "cookies": requests.utils.dict_from_cookiejar(self.session.cookies),
-                        "student_name": self._scrape_student_name(full_redirect_url)
+                        "student_name": student_info.get("name", "Öğrenci"),
+                        "profile_photo": student_info.get("profile_photo")
                     }
                 else:
                     logger.warning("Redirected back to login.aspx.")
@@ -166,14 +168,15 @@ class AuthScraper:
                 "error_code": "SERVER_ERROR"
             }
 
-    def _scrape_student_name(self, dashboard_url: str) -> str:
+    def _scrape_student_info(self, dashboard_url: str) -> Dict[str, Any]:
         """
-        Helper to scrape student name. Tries multiple potential dashboard URLs.
+        Helper to scrape student name and profile photo from the dashboard page.
+        Returns a dict with 'name' (str) and optionally 'profile_photo' (base64 str).
         """
+        result = {"name": "Öğrenci", "profile_photo": None}
+        
         try:
-            # 2. Add standard OBS dashboard paths
             base_url = "https://obs.ozal.edu.tr/oibs/std/"
-            # Prioritize the user-provided specific URL
             targets = [f"{base_url}index.aspx?curOp=0", dashboard_url, f"{base_url}default.aspx", f"{base_url}index.aspx"]
             
             headers = {
@@ -184,29 +187,49 @@ class AuthScraper:
                 if not url: continue
                 
                 try:
-                    logger.debug(f"Scraping name from: {url}")
-                    # ADDED TIMEOUT to prevent freezing
+                    logger.debug(f"Scraping student info from: {url}")
                     r = self.session.get(url, headers=headers, timeout=15)
                     if r.status_code == 200:
                         soup = BeautifulSoup(r.content, "lxml")
-                        # Try specific ID first
+                        
+                        # --- Student Name ---
                         name_elem = soup.find(id=SELECTORS.get("STUDENT_NAME", "lblOgrenciAdSoyad"))
                         if name_elem and name_elem.text.strip():
-                            logger.info(f"Check 1: Found name via ID in {url}")
-                            return name_elem.text.strip()
+                            result["name"] = name_elem.text.strip()
+                            logger.info(f"Found name via ID in {url}")
+                        else:
+                            span = soup.find("span", class_="user-name")
+                            if span:
+                                result["name"] = span.text.strip()
+                                logger.info(f"Found name via class in {url}")
+                            else:
+                                continue  # Try next URL
                         
-                        # Fallback: Try bold span inside header if ID fails
-                        # Some OBS versions put name in a span under .user-info
-                        span = soup.find("span", class_="user-name")
-                        if span:
-                            logger.info(f"Check 2: Found name via class in {url}")
-                            return span.text.strip()
+                        # --- Profile Photo ---
+                        photo_elem = soup.find(id=SELECTORS.get("PROFILE_PHOTO_IMG", "imgPhoto"))
+                        if photo_elem:
+                            photo_src = photo_elem.get("src")
+                            if photo_src:
+                                photo_url = fix_url(photo_src)
+                                try:
+                                    photo_response = self.session.get(photo_url, timeout=10)
+                                    if photo_response.status_code == 200 and len(photo_response.content) > 100:
+                                        result["profile_photo"] = base64.b64encode(photo_response.content).decode('utf-8')
+                                        logger.info(f"Profile photo downloaded. Size: {len(photo_response.content)} bytes")
+                                    else:
+                                        logger.warning(f"Profile photo response invalid. Status: {photo_response.status_code}, Size: {len(photo_response.content)}")
+                                except Exception as e:
+                                    logger.warning(f"Failed to download profile photo: {e}")
+                        
+                        # If we got the name, no need to try other URLs
+                        break
+                        
                 except Exception as e:
                     logger.warning(f"Failed attempt for {url}: {e}")
                     continue
                 
         except Exception as e:
-            logger.warning(f"Failed to scrape student name: {e}")
+            logger.warning(f"Failed to scrape student info: {e}")
         
-        return "Öğrenci"
+        return result
 

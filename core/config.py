@@ -32,6 +32,7 @@ SELECTORS = {
     "SCREEN_HEIGHT": "txt_scrHeight",
     "STUDENT_NAME": "lblOgrenciAdSoyad",  # CORRECTED per User Request
     "GPA_LABEL": "lblAGNO",               # CORRECTED per User Request (AGNO only)
+    "PROFILE_PHOTO_IMG": "imgPhoto",       # Student profile photo on dashboard
 }
 
 # HATA MESAJLARI (Backend'den dönen raw stringler)

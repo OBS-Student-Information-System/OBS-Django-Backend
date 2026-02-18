@@ -140,7 +140,11 @@ class handler(BaseHTTPRequestHandler):
 
     def _send_json_response(self, result):
         if result.get('success'):
-            self._send_response(200, {"status": "success", "data": result.get('data', []), "message": result.get('message')})
+            response_data = {"status": "success", "data": result.get('data', []), "message": result.get('message')}
+            # Pass through extra keys (e.g. gpa) that service layer may provide
+            if result.get('gpa') is not None:
+                response_data['gpa'] = result['gpa']
+            self._send_response(200, response_data)
         else:
             self._send_response(500, {"status": "error", "message": result.get('message'), "error_code": result.get('error_code')})
     
