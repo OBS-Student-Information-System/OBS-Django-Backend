@@ -1,6 +1,6 @@
 # OBS Backend - Service Oriented Architecture
 
-OBS Mobile Application için geliştirilmiş, **Service-Oriented** (Servis Odaklı) bir Python Backend projesidir.
+OBS Mobile Application için geliştirilmiş, **Service-Oriented** (Servis Odaklı) bir Python Backend projesidir. (Not: Klasör isminde Django geçse de, performans ve sadelik için saf **Python `http.server`** kullanılmıştır.)
 
 ## 🏗 Mimari Felsefe: "The Facade"
 Bu backend, mobil uygulamanın OBS sistemine erişmesi için bir **Vekil Sunucu (Proxy/Adapter)** görevi görür.
@@ -34,6 +34,21 @@ Backend, Frontend'in **Stale-While-Revalidate** (Önce önbelleği göster, sonr
 1.  **Request:** Client -> Backend (`get_transcript`).
 2.  **Navigation:** Scraper, tarayıcı taklidi yaparak (`Sec-Fetch-Dest: document`) doğrudan `caller.aspx` adresine gider.
 3.  **Result:** OBS'den dönen PDF stream'i yakalanır ve client'a verilir (veya base64/binary).
+
+### 📅 Schedule & Calendar
+1.  **Schedule:** `get_schedule` aksiyonu ile öğrencinin haftalık ders programı çekilir ve JSON formatında sunulur.
+2.  **Calendar:** `get_academic_calendar` ile üniversitenin akademik takvimi anlık olarak parse edilir.
+
+### 🍽 Food Menu
+*   **Endpoint:** `food_menu`
+*   **Logic:** OBS dışında SKS Daire Başkanlığı sayfasından yemek listesini çeker.
+
+## ⚙️ Yapılandırma (Configuration)
+
+Tüm "Magic String"ler ve ayarlar `core/config.py` dosyasında merkezi olarak yönetilir:
+*   **URL Sabitleri:** OBS, Login, Grade, Schedule URL'leri.
+*   **HTML Selectors:** Scraper'ın elementleri bulmak için kullandığı ID ve Class'lar. (Site tasarımı değişirse sadece burası güncellenir).
+*   **Headers:** Request atarken kullanılan browser taklidi (User-Agent).
 
 ## 📂 Klasör Yapısı
 

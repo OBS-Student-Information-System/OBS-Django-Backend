@@ -12,3 +12,10 @@ Bu dosya, projenin **Ana Giriş Noktasıdır (Main Entry Point)**. Gelen HTTP is
 4.  **Logging:** İsteklerin giriş ve çıkışlarını loglar.
 
 **ÖNEMLİ:** Bu dosyada **İş Mantığı (Business Logic) BULUNMAZ.** Sadece trafiği yönetir.
+
+### 🏗 Dependency Injection
+`handler` fonksiyonları artık Servis sınıflarını doğrudan (`AuthService()`) başlatmaz. Bunun yerine **`ServiceFactory`** kullanarak bağımlılıkları alır:
+```python
+auth_service = ServiceFactory.create_auth_service()
+```
+Bu sayede test yazarken veya farklı implementasyonlara geçerken kod değişikliği yapılmasına gerek kalmaz.
