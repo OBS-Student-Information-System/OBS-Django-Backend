@@ -8,8 +8,8 @@ from core.config import CALENDAR_URL, DEFAULT_REFERER
 logger = logging.getLogger(__name__)
 
 class CalendarService:
-    def __init__(self):
-        self.scraper = CalendarScraper()
+    def __init__(self, scraper=None):
+        self.scraper = scraper or CalendarScraper()
         # Browser flow similar to Schedule: caller.aspx?curPage=101 -> st_akademik_takvim.aspx
         self.calendar_url = CALENDAR_URL
         # Referer should be index.aspx (the dashboard) as seen in browser/Schedule module

@@ -14,9 +14,9 @@ class ScheduleService:
     Handles session management, cookie updates, and schedule data retrieval
     from the university OBS system via web scraping.
     """
-    def __init__(self):
-        self.scraper = ScheduleScraper()
-        self.session = create_session()
+    def __init__(self, scraper=None, session=None):
+        self.scraper = scraper or ScheduleScraper()
+        self.session = session or create_session()
         # Browser flow: std_time_table.aspx → 302 → caller.aspx?curPage=108 → actual schedule
         self.schedule_url = SCHEDULE_URL
         # Referer should be index.aspx (the dashboard) as seen in browser

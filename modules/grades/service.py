@@ -10,8 +10,8 @@ from core.logger import setup_logger
 logger = setup_logger(__name__)
 
 class GradesService:
-    def __init__(self, session=None):
-        self.scraper = GradesScraper(session)
+    def __init__(self, scraper=None, session=None):
+        self.scraper = scraper or GradesScraper(session)
 
     def update_session_cookies(self, cookies: Dict[str, str]):
         """Updates the session with provided cookies."""

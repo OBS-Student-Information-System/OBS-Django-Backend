@@ -5,9 +5,111 @@ from modules.grades.service import GradesService
 from modules.calendar.service import CalendarService
 from modules.schedule.service import ScheduleService
 from modules.transcript.service import TranscriptService
+from modules.food.service import FoodService
 from core.logger import setup_logger
+from core.router import ActionDispatcher
 
 logger = setup_logger("api.index")
+
+# --- Handler Functions ---
+# These functions decouple the Service call from the RequestHandler
+# They adhere to a standard signature: (body, context)
+
+def handle_init_login(body, context):
+    auth_service = AuthService()
+    data = auth_service.prepare_login()
+    if "error" in data:
+        context._send_response(500, {"status": "error", "message": data['error']})
+    else:
+        context._send_response(200, {"status": "success", "data": data})
+
+def handle_login(body, context):
+    auth_service = AuthService()
+    auth_service.update_session_cookies(body.get('cookies', {}))
+    
+    result = auth_service.login(
+        body.get('username'),
+        body.get('password'),
+        body.get('captcha'),
+        body.get('view_state_data', {})
+    )
+    
+    if result.get('success'):
+        context._send_response(200, {"status": "success", "data": result})
+    else:
+        context._send_response(401, {
+            "status": "error", 
+            "message": result.get('message'), 
+            "error_code": result.get('error_code')
+        })
+
+def handle_get_grades(body, context):
+    cookies = body.get('cookies', {})
+    if not cookies:
+        context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
+        return
+
+    grades_service = GradesService()
+    grades_service.update_session_cookies(cookies)
+    result = grades_service.get_grades(body.get('term_id'))
+    context._send_json_response(result)
+
+def handle_get_terms(body, context):
+    cookies = body.get('cookies', {})
+    if not cookies:
+        context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
+        return
+
+    grades_service = GradesService()
+    grades_service.update_session_cookies(cookies)
+    result = grades_service.get_terms()
+    context._send_json_response(result)
+
+def handle_get_calendar(body, context):
+    calendar_service = CalendarService()
+    calendar_data = calendar_service.get_calendar(cookies=body.get('cookies', {}))
+    context._send_response(200, {"status": "success", "data": calendar_data})
+
+def handle_get_schedule(body, context):
+    cookies = body.get('cookies', {})
+    if not cookies:
+         context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
+         return
+
+    schedule_service = ScheduleService()
+    schedule_service.update_session_cookies(cookies)
+    schedule_data = schedule_service.get_schedule()
+    context._send_response(200, {"status": "success", "data": schedule_data})
+
+def handle_get_transcript(body, context):
+    cookies = body.get('cookies', {})
+    if not cookies:
+        context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
+        return
+    
+    transcript_service = TranscriptService()
+    transcript_service.update_session_cookies(cookies)
+    result = transcript_service.get_transcript()
+    context._send_json_response(result)
+
+def handle_food_menu(body, context):
+    food_service = FoodService()
+    # Service handles default URL logic internally
+    result = food_service.get_daily_menu(body.get('menu_url'))
+    context._send_json_response(result)
+
+
+# --- Dispatcher Configuration ---
+dispatcher = ActionDispatcher()
+dispatcher.register('init_login', handle_init_login)
+dispatcher.register('login', handle_login)
+dispatcher.register('get_grades', handle_get_grades)
+dispatcher.register('get_available_terms', handle_get_terms)
+dispatcher.register('get_academic_calendar', handle_get_calendar)
+dispatcher.register('get_schedule', handle_get_schedule)
+dispatcher.register('get_transcript', handle_get_transcript)
+dispatcher.register('food_menu', handle_food_menu)
+
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -19,114 +121,8 @@ class handler(BaseHTTPRequestHandler):
             
             logger.info(f"Received request action: {action}")
             
-            # Initialize Services
-            auth_service = AuthService()
-            
-            if action == 'init_login':
-                data = auth_service.prepare_login()
-                if "error" in data:
-                     self._send_response(500, {"status": "error", "message": data['error']})
-                else:
-                     self._send_response(200, {"status": "success", "data": data})
-
-            elif action == 'login':
-                username = body.get('username')
-                password = body.get('password')
-                captcha = body.get('captcha')
-                view_state_data = body.get('view_state_data', {})
-                cookies = body.get('cookies', {})
-                
-                # Update session via service
-                auth_service.update_session_cookies(cookies)
-                
-                result = auth_service.login(username, password, captcha, view_state_data)
-                
-                if result.get('success'):
-                    self._send_response(200, {"status": "success", "data": result})
-                else:
-                    self._send_response(401, {
-                        "status": "error", 
-                        "message": result.get('message'), 
-                        "error_code": result.get('error_code')
-                    })
-            
-            elif action == 'get_grades':
-                cookies = body.get('cookies', {})
-                term_id = body.get('term_id')
-                
-                if not cookies:
-                    logger.warning("get_grades called without cookies.")
-                    self._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
-                    return
-                
-                grades_service = GradesService()
-                grades_service.update_session_cookies(cookies)
-                
-                result = grades_service.get_grades(term_id)
-                self._send_json_response(result)
-            
-            elif action == 'get_available_terms':
-                cookies = body.get('cookies', {})
-                
-                if not cookies:
-                    logger.warning("get_available_terms called without cookies.")
-                    self._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
-                    return
-                
-                grades_service = GradesService()
-                grades_service.update_session_cookies(cookies)
-                
-                result = grades_service.get_terms()
-                self._send_json_response(result)
-
-            elif action == 'get_academic_calendar':
-                # Calendar page requires auth cookies
-                cookies = body.get('cookies', {})
-                
-                calendar_service = CalendarService()
-                calendar_data = calendar_service.get_calendar(cookies=cookies)
-                
-                self._send_response(200, {"status": "success", "data": calendar_data})
-
-            elif action == 'get_schedule':
-                cookies = body.get('cookies', {})
-                if not cookies:
-                     self._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
-                     return
-
-                schedule_service = ScheduleService()
-                schedule_service.update_session_cookies(cookies)
-                schedule_data = schedule_service.get_schedule()
-                
-                self._send_response(200, {"status": "success", "data": schedule_data})
-            
-            elif action == 'get_transcript':
-                cookies = body.get('cookies', {})
-                if not cookies:
-                    self._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
-                    return
-                
-                transcript_service = TranscriptService()
-                transcript_service.update_session_cookies(cookies)
-                result = transcript_service.get_transcript()
-                
-                self._send_json_response(result)
-
-            elif action == 'food_menu':
-                # Public endpoint, no cookies needed
-                # If menu_url is None, service will use default from config
-                menu_url = body.get('menu_url')
-                
-                # Dynamic import to avoid circular dependencies if any
-                from modules.food.service import FoodService
-                food_service = FoodService()
-                
-                result = food_service.get_daily_menu(menu_url)
-                self._send_json_response(result)
-            
-            else:
-                logger.warning(f"Unknown action: {action}")
-                self._send_response(400, {"status": "error", "message": f"Unknown action: {action}"})
+            # Dispatch Request
+            dispatcher.dispatch(action, body, self)
 
         except Exception as e:
             logger.exception("Unhandled exception in do_POST")
@@ -142,7 +138,6 @@ class handler(BaseHTTPRequestHandler):
     def _send_json_response(self, result):
         if result.get('success'):
             response_data = {"status": "success", "data": result.get('data', []), "message": result.get('message')}
-            # Pass through extra keys (e.g. gpa) that service layer may provide
             if result.get('gpa') is not None:
                 response_data['gpa'] = result['gpa']
             self._send_response(200, response_data)

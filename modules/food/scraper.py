@@ -1,9 +1,8 @@
 
 from typing import Dict, Any, Optional
 import requests
-from bs4 import BeautifulSoup
-from datetime import datetime
 from core.logger import setup_logger
+from modules.food.parser import parse_daily_menu
 
 logger = setup_logger(__name__)
 
@@ -30,44 +29,7 @@ class FoodScraper:
                 logger.error(f"Failed to fetch menu. Status: {response.status_code}")
                 return {"error": f"Menüye erişilemedi. Hata kodu: {response.status_code}"}
 
-            soup = BeautifulSoup(response.content, 'html.parser')
-            
-            # Parser Logic matching the user's provided HTML snippet:
-            # <div class="box"><div class="box__content"><p>FOOD NAME</p></div></div>
-            
-            # Select all paragraphs inside .box__content
-            # equivalent to Dart: document.querySelectorAll('.box .box__content p')
-            food_items = soup.select('.box .box__content p')
-            
-            if not food_items:
-                logger.warning("No food items found with selector '.box .box__content p'")
-                return {"error": "Menü yapısı değişmiş olabilir, veri bulunamadı."}
-            
-            # Text cleaning helper
-            def clean_text(element):
-                return element.get_text(strip=True) if element else "-"
-
-            # Mapping logic (Main -> Side -> Soup -> Dessert) based on user snippet
-            # 1. KOFTE (Main)
-            # 2. PILAV (Side)
-            # 3. CORBA (Soup)
-            # 4. HAYDARİ (Side/Appetizer)
-            
-            main_dish = clean_text(food_items[0]) if len(food_items) > 0 else "-"
-            side_dish = clean_text(food_items[1]) if len(food_items) > 1 else "-"
-            soup_name = clean_text(food_items[2]) if len(food_items) > 2 else "-"
-            dessert = clean_text(food_items[3]) if len(food_items) > 3 else "-"
-            
-            today_str = datetime.now().strftime('%d.%m.%Y')
-            
-            return {
-                "date": today_str,
-                "mainDish": main_dish,
-                "sideDish": side_dish,
-                "soup": soup_name,
-                "dessert": dessert,
-                "calorie": 0 # Not available in snippet
-            }
+            return parse_daily_menu(response.content)
 
         except Exception as e:
             logger.exception("Exception in get_daily_menu")

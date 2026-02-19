@@ -17,14 +17,15 @@ class TranscriptService:
     Handles session management, PDF fetching, and base64 encoding.
     """
     
-    def __init__(self, session=None):
-        """Initialize service with optional session.
+    def __init__(self, scraper=None, session=None):
+        """Initialize service with optional session and scraper.
         
         Args:
+            scraper: Optional scraper instance for testing.
             session: Optional requests session for maintaining cookies.
         """
         self.session = session if session else create_session()
-        self.scraper = TranscriptScraper(self.session)
+        self.scraper = scraper or TranscriptScraper(self.session)
     
     def update_session_cookies(self, cookies: Dict[str, str]):
         """Updates the session with provided cookies.

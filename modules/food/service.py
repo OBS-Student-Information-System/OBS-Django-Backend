@@ -7,8 +7,8 @@ from core.config import FOOD_MENU_URL
 logger = setup_logger(__name__)
 
 class FoodService:
-    def __init__(self):
-        self.scraper = FoodScraper()
+    def __init__(self, scraper=None):
+        self.scraper = scraper or FoodScraper()
 
     def get_daily_menu(self, menu_url: str) -> Dict[str, Any]:
         """

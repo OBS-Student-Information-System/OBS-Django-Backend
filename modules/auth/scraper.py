@@ -7,8 +7,9 @@ import requests
 from bs4 import BeautifulSoup
 from typing import Dict, Any, Optional
 from core.config import LOGIN_URL, SELECTORS, ERROR_STRINGS, OBS_DOMAIN, DEFAULT_REFERER
-from core.utils import create_session, get_hidden_inputs, fix_url
+from core.utils import create_session, fix_url
 from core.logger import setup_logger
+from modules.auth.parser import parse_login_page, parse_login_error, parse_student_info
 
 logger = setup_logger(__name__)
 
@@ -30,37 +31,25 @@ class AuthScraper:
                 logger.error(f"Failed to fetch login page. Status: {r.status_code}")
                 return {"error": f"Siteye erişilemedi. Status: {r.status_code}"}
 
-            soup = BeautifulSoup(r.content, "lxml")
-            title = soup.title.string if soup.title else "Baslik Yok"
-            logger.debug(f"Page title: {title}")
-
-            # Extract Captcha
-            captcha_b64 = None
-            img_tag = soup.find(id=SELECTORS["CAPTCHA_IMG"])
+            # Parse using new parser module
+            parsed_data = parse_login_page(r.content)
             
-            if img_tag:
-                src = img_tag.get("src")
-                url = fix_url(src)
-                
-                # Download Captcha Image
-                r_img = self.session.get(url)
-                if r_img.status_code == 200:
-                    captcha_b64 = base64.b64encode(r_img.content).decode('utf-8')
-                    logger.debug("Captcha image downloaded and encoded.")
-                else:
-                    logger.warning(f"Failed to download captcha image. Status: {r_img.status_code}")
-            else:
-                logger.warning(f"Captcha element ({SELECTORS['CAPTCHA_IMG']}) not found on page.")
-
-            # Extract Hidden Inputs (ViewState)
-            hidden_inputs = get_hidden_inputs(soup)
-            logger.debug(f"Extracted {len(hidden_inputs)} hidden inputs.")
+            # Download Captcha Image if URL found
+            captcha_b64 = None
+            if parsed_data.get("captcha_url"):
+                try:
+                    r_img = self.session.get(parsed_data["captcha_url"])
+                    if r_img.status_code == 200:
+                        captcha_b64 = base64.b64encode(r_img.content).decode('utf-8')
+                        logger.debug("Captcha image downloaded and encoded.")
+                except Exception as e:
+                    logger.warning(f"Failed to download captcha image: {e}")
 
             return {
                 "captcha_image": captcha_b64,
-                "view_state_data": hidden_inputs,
+                "view_state_data": parsed_data["view_state_data"],
                 "cookies": requests.utils.dict_from_cookiejar(self.session.cookies),
-                "debug": f"Site: {title}"
+                "debug": f"Site: {parsed_data['title']}"
             }
 
         except Exception as e:
@@ -128,30 +117,10 @@ class AuthScraper:
                     logger.warning("Redirected back to login.aspx.")
             
             # Case 2: Login Failed (Stayed on page, check for error message)
-            soup = BeautifulSoup(response.content, 'lxml')
-            error_elem = soup.find(id=SELECTORS["LOGIN_ERROR_LABEL"])
-            
-            error_text = error_elem.text.strip() if error_elem else ""
-            if error_text:
-                logger.warning(f"Login failed with message: {error_text}")
-                
-                # Refined Error Classification using Config Constants
-                error_code = 'LOGIN_FAILED'
-                
-                # Helper to check if any string in list matches
-                def is_error(key):
-                    return any(s in error_text.lower() if s.islower() else s in error_text for s in ERROR_STRINGS[key])
-
-                if is_error("CAPTCHA"):
-                    error_code = 'INVALID_CAPTCHA'
-                elif is_error("CREDENTIALS"):
-                    error_code = 'INVALID_CREDENTIALS'
-                
-                return {
-                    "success": False,
-                    "message": error_text,
-                    "error_code": error_code
-                }
+            error_result = parse_login_error(response.content)
+            if error_result:
+                logger.warning(f"Login failed with message: {error_result['message']}")
+                return error_result
             
             # Case 3: Unknown State
             logger.error("Login failed with no error message and no redirect.")
@@ -195,45 +164,19 @@ class AuthScraper:
                     r = self.session.get(url, headers=headers, timeout=15)
                     
                     if r.status_code == 200:
-                        soup = BeautifulSoup(r.content, "lxml")
+                        # Use parser for student info
+                        result, photo_url = parse_student_info(r.content, result)
                         
-                        # --- Student Name ---
-                        if result["name"] == "Öğrenci":
-                            name_elem = soup.find(id=SELECTORS.get("STUDENT_NAME", "lblOgrenciAdSoyad"))
-                            if name_elem and name_elem.text.strip():
-                                result["name"] = name_elem.text.strip()
-                                logger.info(f"Found name: {result['name']}")
-                            else:
-                                span = soup.find("span", class_="user-name")
-                                if span:
-                                    result["name"] = span.text.strip()
-                        
-                        # --- GPA (AGNO) ---
-                        # Format: "AGNO: 3,32" -> "3.32"
-                        if result["gpa"] is None:
-                            gpa_elem = soup.find(id=SELECTORS.get("GPA_LABEL", "lblAGNO"))
-                            if gpa_elem and gpa_elem.text.strip():
-                                raw_gpa = gpa_elem.text.strip()
-                                # Clean string: remove "AGNO:", replace comma with dot
-                                clean_gpa = raw_gpa.replace("AGNO:", "").replace("AGNO", "").strip().replace(",", ".")
-                                result["gpa"] = clean_gpa
-                                logger.info(f"Found AGNO: {clean_gpa}")
+                        # Download photo if URL found
+                        if photo_url:
+                            try:
+                                photo_response = self.session.get(photo_url, timeout=10)
+                                if photo_response.status_code == 200 and len(photo_response.content) > 100:
+                                    result["profile_photo"] = base64.b64encode(photo_response.content).decode('utf-8')
+                                    logger.info("Profile photo downloaded.")
+                            except Exception as e:
+                                logger.warning(f"Failed to download profile photo: {e}")
 
-                        # --- Profile Photo ---
-                        if result["profile_photo"] is None:
-                            photo_elem = soup.find(id=SELECTORS.get("PROFILE_PHOTO_IMG", "imgPhoto"))
-                            if photo_elem:
-                                photo_src = photo_elem.get("src")
-                                if photo_src:
-                                    photo_url = fix_url(photo_src)
-                                    try:
-                                        photo_response = self.session.get(photo_url, timeout=10)
-                                        if photo_response.status_code == 200 and len(photo_response.content) > 100:
-                                            result["profile_photo"] = base64.b64encode(photo_response.content).decode('utf-8')
-                                            logger.info("Profile photo downloaded.")
-                                    except Exception as e:
-                                        logger.warning(f"Failed to download profile photo: {e}")
-                        
                         # If we have name and GPA, we can stop (photo is bonus)
                         if result["name"] != "Öğrenci" and result["gpa"] is not None:
                             break

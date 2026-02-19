@@ -10,9 +10,9 @@ from core.logger import setup_logger
 logger = setup_logger(__name__)
 
 class AuthService:
-    def __init__(self, session=None):
-        # In the future, this could be injected with a DatabaseRepo instead of Scraper
-        self.scraper = AuthScraper(session)
+    def __init__(self, scraper=None, session=None):
+        # Allow injecting scraper for testing
+        self.scraper = scraper or AuthScraper(session)
 
     def get_session(self):
         """Returns the underlying session (useful for stateful chaining)."""
