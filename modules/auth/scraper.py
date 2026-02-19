@@ -6,7 +6,7 @@ import base64
 import requests
 from bs4 import BeautifulSoup
 from typing import Dict, Any, Optional
-from core.config import LOGIN_URL, SELECTORS, ERROR_STRINGS
+from core.config import LOGIN_URL, SELECTORS, ERROR_STRINGS, OBS_DOMAIN, DEFAULT_REFERER
 from core.utils import create_session, get_hidden_inputs, fix_url
 from core.logger import setup_logger
 
@@ -103,7 +103,7 @@ class AuthScraper:
                     
                     # If redirect URL starts with /, it's already an absolute path from domain root
                     if redirect_url.startswith('/'):
-                        full_redirect_url = f"https://obs.ozal.edu.tr{redirect_url}"
+                        full_redirect_url = f"{OBS_DOMAIN}{redirect_url}"
                     else:
                         full_redirect_url = fix_url(redirect_url)
                     
@@ -184,7 +184,7 @@ class AuthScraper:
             targets = [DASHBOARD_URL, dashboard_url]
             
             headers = {
-                 "Referer": "https://obs.ozal.edu.tr/oibs/std/login.aspx"
+                 "Referer": DEFAULT_REFERER
             }
 
             for url in targets:

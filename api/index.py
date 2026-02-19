@@ -114,6 +114,7 @@ class handler(BaseHTTPRequestHandler):
 
             elif action == 'food_menu':
                 # Public endpoint, no cookies needed
+                # If menu_url is None, service will use default from config
                 menu_url = body.get('menu_url')
                 
                 # Dynamic import to avoid circular dependencies if any

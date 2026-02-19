@@ -4,7 +4,7 @@ import logging
 from bs4 import BeautifulSoup
 from .scraper import ScheduleScraper
 from core.utils import create_session
-from core.config import SCHEDULE_URL
+from core.config import SCHEDULE_URL, DEFAULT_REFERER
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +18,9 @@ class ScheduleService:
         self.scraper = ScheduleScraper()
         self.session = create_session()
         # Browser flow: std_time_table.aspx → 302 → caller.aspx?curPage=108 → actual schedule
-        self.schedule_url = "https://obs.ozal.edu.tr/oibs/std/caller.aspx?curPage=108"
+        self.schedule_url = SCHEDULE_URL
         # Referer should be index.aspx (the dashboard) as seen in browser
-        self.dummy_referer = "https://obs.ozal.edu.tr/oibs/std/index.aspx?curOp=0"
+        self.dummy_referer = DEFAULT_REFERER
 
     def update_session_cookies(self, cookies: Dict[str, str]):
         """Updates the session with provided cookies."""

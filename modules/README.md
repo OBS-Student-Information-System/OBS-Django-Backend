@@ -23,5 +23,9 @@ Bu projede **Separation of Concerns** (İşlerin Ayrılması) prensibi gereği h
     *   **NOT:** Bu katman "Kirli" katmandır. Site değişirse burası bozulur, ama Service katmanı sayesinde uygulamanın geri kalanı korunur.
 
 ## Modüller
-*   **`auth/`**: Giriş işlemleri, Captcha çözme, Session yönetimi.
-*   **`grades/`**: Notları görüntüleme, dönem listeleme.
+*   **`auth/`**: Giriş işlemleri, Captcha çözme, Session yönetimi (Cookie Relay).
+*   **`grades/`**: Notları görüntüleme. `POST` simülasyonu ile dönem değiştirme.
+*   **`transcript/`**: Transkript görüntüleme. **Caller / Iframe** deseni ile PDF çeker.
+*   **`schedule/`**: Ders programı. Haftalık tablo parsing işlemi yapar.
+*   **`calendar/`**: Akademik takvim parsing işlemi.
+*   **`food/`**: Yemek listesi. **Public Scraper** (Auth gerektirmez).

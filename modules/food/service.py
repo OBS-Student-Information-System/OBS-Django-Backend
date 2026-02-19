@@ -2,6 +2,7 @@
 from typing import Dict, Any
 from modules.food.scraper import FoodScraper
 from core.logger import setup_logger
+from core.config import FOOD_MENU_URL
 
 logger = setup_logger(__name__)
 
@@ -14,7 +15,7 @@ class FoodService:
         Coordinates fetching the daily menu.
         """
         if not menu_url:
-            return {"success": False, "message": "Menu URL is missing."}
+            menu_url = FOOD_MENU_URL
 
         result = self.scraper.get_daily_menu(menu_url)
         

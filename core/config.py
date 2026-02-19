@@ -2,12 +2,22 @@
 Configuration constants for OBS Backend.
 """
 
+# ANA AYARLAR
+OBS_DOMAIN = "https://obs.ozal.edu.tr"
+OBS_ROOT = f"{OBS_DOMAIN}/oibs/std"
+
 # URL SABİTLERİ
-BASE_URL = "https://obs.ozal.edu.tr/oibs/std/"
-LOGIN_URL = "https://obs.ozal.edu.tr/oibs/std/login.aspx"
-DASHBOARD_URL = "https://obs.ozal.edu.tr/oibs/std/duyuru_new.aspx" # AGNO here
-GRADES_URL = "https://obs.ozal.edu.tr/oibs/std/not_listesi_op.aspx"
-SCHEDULE_URL = "https://obs.ozal.edu.tr/oibs/std/ders_programi.aspx" # Future use
+BASE_URL = f"{OBS_ROOT}/"
+LOGIN_URL = f"{OBS_ROOT}/login.aspx"
+DASHBOARD_URL = f"{OBS_ROOT}/duyuru_new.aspx" # AGNO here
+GRADES_URL = f"{OBS_ROOT}/not_listesi_op.aspx"
+SCHEDULE_URL = f"{OBS_ROOT}/caller.aspx?curPage=108"
+TRANSCRIPT_URL = f"{OBS_ROOT}/caller.aspx?curPage=109"
+CALENDAR_URL = f"{OBS_ROOT}/caller.aspx?curPage=101"
+FOOD_MENU_URL = "https://sksdb.ozal.edu.tr/yemek_listesi"
+
+# REFERER AYARLARI
+DEFAULT_REFERER = f"{OBS_ROOT}/index.aspx?curOp=0"
 
 # HEADER AYARLARI
 DEFAULT_HEADERS = {

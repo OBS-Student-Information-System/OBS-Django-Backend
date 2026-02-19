@@ -3,7 +3,7 @@
 Bu klasör, backend'in **HTTP Giriş Kapısıdır (Entry Point)**.
 
 ## `index.py`
-Bu dosya **Vercel Serverless Function** yapısına uygun olarak tasarlanmıştır ancak yerel sunucuda (`scripts/run_local.py`) da çalışabilir. Vercel terk edilmiştir ve artık yerelde çalışmaktadır.
+Bu dosya, projenin **Ana Giriş Noktasıdır (Main Entry Point)**. Gelen HTTP isteklerini karşılar ve ilgili modüllere dağıtır. Standart bir HTTP sunucusu (`http.server`) üzerinde çalışacak şekilde yapılandırılmıştır.
 
 ### Görevleri (Controller Role)
 1.  **Routing:** Gelen POST isteğindeki `action` parametresine göre (`login`, `get_grades` vb.) isteği ilgili Servise yönlendirir.

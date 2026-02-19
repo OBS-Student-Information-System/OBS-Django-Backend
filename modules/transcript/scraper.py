@@ -6,6 +6,7 @@ import requests
 from typing import Dict, Any
 from core.logger import setup_logger
 from core.utils import create_session
+from core.config import TRANSCRIPT_URL, DEFAULT_REFERER
 
 logger = setup_logger(__name__)
 
@@ -20,7 +21,7 @@ class TranscriptScraper:
             session: Optional requests session. Creates new one if not provided.
         """
         self.session = session if session else create_session()
-        self.transcript_url = "https://obs.ozal.edu.tr/oibs/std/caller.aspx?curPage=109"
+        self.transcript_url = TRANSCRIPT_URL
     
     def fetch_transcript(self) -> Dict[str, Any]:
         """Fetches transcript PDF from OBS.
@@ -41,7 +42,7 @@ class TranscriptScraper:
             
             # Set headers to mimic browser
             self.session.headers.update({
-                'Referer': 'https://obs.ozal.edu.tr/oibs/std/index.aspx?curOp=0',
+                'Referer': DEFAULT_REFERER,
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Sec-Fetch-Dest': 'document',
                 'Sec-Fetch-Mode': 'navigate',

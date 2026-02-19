@@ -3,6 +3,7 @@ import requests
 from typing import List, Dict, Any
 from .scraper import CalendarScraper
 from core.utils import create_session
+from core.config import CALENDAR_URL, DEFAULT_REFERER
 
 logger = logging.getLogger(__name__)
 
@@ -10,9 +11,9 @@ class CalendarService:
     def __init__(self):
         self.scraper = CalendarScraper()
         # Browser flow similar to Schedule: caller.aspx?curPage=101 -> st_akademik_takvim.aspx
-        self.calendar_url = "https://obs.ozal.edu.tr/oibs/std/caller.aspx?curPage=101"
+        self.calendar_url = CALENDAR_URL
         # Referer should be index.aspx (the dashboard) as seen in browser/Schedule module
-        self.dummy_referer = "https://obs.ozal.edu.tr/oibs/std/index.aspx?curOp=0"
+        self.dummy_referer = DEFAULT_REFERER
 
     def get_calendar(self, cookies: Dict[str, str] = None) -> List[Dict[str, Any]]:
         """Fetches academic calendar events from OBS."""
