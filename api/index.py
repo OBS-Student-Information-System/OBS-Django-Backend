@@ -1,11 +1,6 @@
 from http.server import BaseHTTPRequestHandler
 import json
-from modules.auth.service import AuthService
-from modules.grades.service import GradesService
-from modules.calendar.service import CalendarService
-from modules.schedule.service import ScheduleService
-from modules.transcript.service import TranscriptService
-from modules.food.service import FoodService
+from core.factory import ServiceFactory
 from core.logger import setup_logger
 from core.router import ActionDispatcher
 
@@ -16,7 +11,7 @@ logger = setup_logger("api.index")
 # They adhere to a standard signature: (body, context)
 
 def handle_init_login(body, context):
-    auth_service = AuthService()
+    auth_service = ServiceFactory.create_auth_service()
     data = auth_service.prepare_login()
     if "error" in data:
         context._send_response(500, {"status": "error", "message": data['error']})
@@ -24,7 +19,7 @@ def handle_init_login(body, context):
         context._send_response(200, {"status": "success", "data": data})
 
 def handle_login(body, context):
-    auth_service = AuthService()
+    auth_service = ServiceFactory.create_auth_service()
     auth_service.update_session_cookies(body.get('cookies', {}))
     
     result = auth_service.login(
@@ -49,7 +44,7 @@ def handle_get_grades(body, context):
         context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
         return
 
-    grades_service = GradesService()
+    grades_service = ServiceFactory.create_grades_service()
     grades_service.update_session_cookies(cookies)
     result = grades_service.get_grades(body.get('term_id'))
     context._send_json_response(result)
@@ -60,13 +55,13 @@ def handle_get_terms(body, context):
         context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
         return
 
-    grades_service = GradesService()
+    grades_service = ServiceFactory.create_grades_service()
     grades_service.update_session_cookies(cookies)
     result = grades_service.get_terms()
     context._send_json_response(result)
 
 def handle_get_calendar(body, context):
-    calendar_service = CalendarService()
+    calendar_service = ServiceFactory.create_calendar_service()
     calendar_data = calendar_service.get_calendar(cookies=body.get('cookies', {}))
     context._send_response(200, {"status": "success", "data": calendar_data})
 
@@ -76,7 +71,7 @@ def handle_get_schedule(body, context):
          context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
          return
 
-    schedule_service = ScheduleService()
+    schedule_service = ServiceFactory.create_schedule_service()
     schedule_service.update_session_cookies(cookies)
     schedule_data = schedule_service.get_schedule()
     context._send_response(200, {"status": "success", "data": schedule_data})
@@ -87,13 +82,13 @@ def handle_get_transcript(body, context):
         context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
         return
     
-    transcript_service = TranscriptService()
+    transcript_service = ServiceFactory.create_transcript_service()
     transcript_service.update_session_cookies(cookies)
     result = transcript_service.get_transcript()
     context._send_json_response(result)
 
 def handle_food_menu(body, context):
-    food_service = FoodService()
+    food_service = ServiceFactory.create_food_service()
     # Service handles default URL logic internally
     result = food_service.get_daily_menu(body.get('menu_url'))
     context._send_json_response(result)

@@ -19,3 +19,17 @@ Projenin **Ortak Altyapı** katmanıdır. Tüm modüllerin kullandığı paylaş
 ### `logger.py`
 *   Merkezi loglama yapılandırması.
 *   Tüm modüller `.print()` yerine `logger.info()` veya `logger.error()` kullanır.
+
+## 🏗 Enterprise Architecture (New)
+
+### `factory.py` (Dependency Injection)
+*   **ServiceFactory:** Tüm servislerin üretiminden sorumlu merkezi fabrika.
+*   Kodun içinde `new AuthService()` demek yerine `Factory.create_auth_service()` denir.
+
+### `interfaces.py` (Dependency Inversion)
+*   **ABCs:** `IAuthService`, `IGradesService` gibi soyut sınıflar.
+*   Modüller birbirine değil, bu arayüzlere bağımlıdır.
+
+### `types.py` (Type Safety)
+*   **TypedDicts:** `LoginResponse`, `GradeItem` gibi veri yapıları.
+*   `Dict[str, Any]` belirsizliğini ortadan kaldırır ve IDE/Linter desteği sağlar.

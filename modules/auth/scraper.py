@@ -19,9 +19,8 @@ class AuthScraper:
 
     def fetch_login_page(self) -> Dict[str, Any]:
         """
-        Fetch login page and extract captcha/viewstate.
-        Returns:
-            Dict containing captcha_image (base64), view_state_data, cookies, or error.
+        Fetch login page and return parsed data.
+        Does NOT download captcha automatically anymore (SoC).
         """
         try:
             logger.info("Fetching login page...")
@@ -34,19 +33,9 @@ class AuthScraper:
             # Parse using new parser module
             parsed_data = parse_login_page(r.content)
             
-            # Download Captcha Image if URL found
-            captcha_b64 = None
-            if parsed_data.get("captcha_url"):
-                try:
-                    r_img = self.session.get(parsed_data["captcha_url"])
-                    if r_img.status_code == 200:
-                        captcha_b64 = base64.b64encode(r_img.content).decode('utf-8')
-                        logger.debug("Captcha image downloaded and encoded.")
-                except Exception as e:
-                    logger.warning(f"Failed to download captcha image: {e}")
-
+            # Return raw parsed data (contracts/types should be enforced in Service)
             return {
-                "captcha_image": captcha_b64,
+                "captcha_url": parsed_data.get("captcha_url"),
                 "view_state_data": parsed_data["view_state_data"],
                 "cookies": requests.utils.dict_from_cookiejar(self.session.cookies),
                 "debug": f"Site: {parsed_data['title']}"
@@ -55,6 +44,7 @@ class AuthScraper:
         except Exception as e:
             logger.exception("Exception in fetch_login_page")
             return {"error": f"Backend Hatasi: {str(e)}"}
+
 
     def attempt_login(self, username, password, captcha_code, view_state_data) -> Dict[str, Any]:
         """
