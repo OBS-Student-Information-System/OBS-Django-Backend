@@ -9,9 +9,11 @@ from modules.schedule.service import ScheduleService
 from modules.calendar.service import CalendarService
 from modules.transcript.service import TranscriptService
 from modules.food.service import FoodService
+from modules.user_manual.service import UserManualService
 from core.interfaces import (
     IAuthService, IGradesService, IScheduleService, 
-    ICalendarService, ITranscriptService, IFoodService
+    ICalendarService, ITranscriptService, IFoodService,
+    IUserManualService
 )
 
 class ServiceFactory:
@@ -44,3 +46,7 @@ class ServiceFactory:
     @staticmethod
     def create_food_service() -> IFoodService:
         return FoodService()
+
+    @staticmethod
+    def create_user_manual_service() -> IUserManualService:
+        return UserManualService()

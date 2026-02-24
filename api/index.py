@@ -93,6 +93,16 @@ def handle_food_menu(body, context):
     result = food_service.get_daily_menu(body.get('menu_url'))
     context._send_json_response(result)
 
+def handle_get_user_manual(body, context):
+    cookies = body.get('cookies', {})
+    if not cookies:
+        context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
+        return
+    
+    user_manual_service = ServiceFactory.create_user_manual_service()
+    result = user_manual_service.get_user_manual(cookies=cookies)
+    context._send_json_response(result)
+
 
 # --- Dispatcher Configuration ---
 dispatcher = ActionDispatcher()
@@ -104,6 +114,7 @@ dispatcher.register('get_academic_calendar', handle_get_calendar)
 dispatcher.register('get_schedule', handle_get_schedule)
 dispatcher.register('get_transcript', handle_get_transcript)
 dispatcher.register('food_menu', handle_food_menu)
+dispatcher.register('get_user_manual', handle_get_user_manual)
 
 
 class handler(BaseHTTPRequestHandler):

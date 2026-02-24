@@ -55,3 +55,8 @@ class IFoodService(ABC): # FoodService might not need session updates
     @abstractmethod
     def get_daily_menu(self, menu_url: str) -> Dict[str, Any]:
         pass
+
+class IUserManualService(IService):
+    @abstractmethod
+    def get_user_manual(self, cookies: Dict[str, str]) -> Dict[str, Any]:
+        pass
