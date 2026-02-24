@@ -103,6 +103,16 @@ def handle_get_user_manual(body, context):
     result = user_manual_service.get_user_manual(cookies=cookies)
     context._send_json_response(result)
 
+def handle_get_personal_info(body, context):
+    cookies = body.get('cookies', {})
+    if not cookies:
+        context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
+        return
+        
+    personal_info_service = ServiceFactory.create_personal_info_service()
+    result = personal_info_service.get_personal_info(cookies=cookies)
+    context._send_json_response(result)
+
 
 # --- Dispatcher Configuration ---
 dispatcher = ActionDispatcher()
@@ -115,6 +125,7 @@ dispatcher.register('get_schedule', handle_get_schedule)
 dispatcher.register('get_transcript', handle_get_transcript)
 dispatcher.register('food_menu', handle_food_menu)
 dispatcher.register('get_user_manual', handle_get_user_manual)
+dispatcher.register('get_personal_info', handle_get_personal_info)
 
 
 class handler(BaseHTTPRequestHandler):

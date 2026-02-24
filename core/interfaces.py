@@ -60,3 +60,9 @@ class IUserManualService(IService):
     @abstractmethod
     def get_user_manual(self, cookies: Dict[str, str]) -> Dict[str, Any]:
         pass
+
+class IPersonalInfoService(IService):
+    @abstractmethod
+    def get_personal_info(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
+        pass
+

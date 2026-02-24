@@ -10,10 +10,11 @@ from modules.calendar.service import CalendarService
 from modules.transcript.service import TranscriptService
 from modules.food.service import FoodService
 from modules.user_manual.service import UserManualService
+from modules.personal_info.service import PersonalInfoService
 from core.interfaces import (
     IAuthService, IGradesService, IScheduleService, 
     ICalendarService, ITranscriptService, IFoodService,
-    IUserManualService
+    IUserManualService, IPersonalInfoService
 )
 
 class ServiceFactory:
@@ -50,3 +51,8 @@ class ServiceFactory:
     @staticmethod
     def create_user_manual_service() -> IUserManualService:
         return UserManualService()
+
+    @staticmethod
+    def create_personal_info_service() -> IPersonalInfoService:
+        return PersonalInfoService()
+

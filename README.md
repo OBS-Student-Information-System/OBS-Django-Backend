@@ -39,6 +39,10 @@ Backend, Frontend'in **Stale-While-Revalidate** (Önce önbelleği göster, sonr
 1.  **Schedule:** `get_schedule` aksiyonu ile öğrencinin haftalık ders programı çekilir ve JSON formatında sunulur.
 2.  **Calendar:** `get_academic_calendar` ile üniversitenin akademik takvimi anlık olarak parse edilir.
 
+### 👤 Personal Info
+*   **Endpoint:** `get_personal_info`
+*   **Logic:** Öğrencinin kişisel bilgilerini (ad, soyad, öğrenci numarası vb.) OBS'den çeker ve JSON formatında sunar.
+
 ### 🍽 Food Menu
 *   **Endpoint:** `food_menu`
 *   **Logic:** OBS dışında SKS Daire Başkanlığı sayfasından yemek listesini çeker.

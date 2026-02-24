@@ -14,6 +14,8 @@ GRADES_URL = f"{OBS_ROOT}/not_listesi_op.aspx"
 SCHEDULE_URL = f"{OBS_ROOT}/caller.aspx?curPage=108"
 TRANSCRIPT_URL = f"{OBS_ROOT}/caller.aspx?curPage=109"
 CALENDAR_URL = f"{OBS_ROOT}/caller.aspx?curPage=101"
+PERSONAL_INFO_CALLER_URL = f"{OBS_ROOT}/caller.aspx?curPage=100"
+PERSONAL_INFO_FRAME_URL = f"{OBS_ROOT}/ogr_ozluk.aspx"
 # TODO: Get actual User Manual URL. Using placeholder for now based on common caller.aspx pattern. GALİBA BUNU DÜZELTTİM.
 USER_MANUAL_URL = f"{OBS_ROOT}/caller.aspx?curPage=98" 
 FOOD_MENU_URL = "https://sksdb.ozal.edu.tr/yemek_listesi"
