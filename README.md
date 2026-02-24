@@ -53,10 +53,17 @@ Tüm "Magic String"ler ve ayarlar `core/config.py` dosyasında merkezi olarak y�
 ## 📂 Klasör Yapısı
 
 *   **`api/`**: Giriş kapısı (Entry Point). HTTP isteklerini karşılar ve Router görevi görür.
+*   **`core/`**: Ortak altyapı.
+    *   `config.py`: Tüm sabitler (URL, Selector, Header).
+    *   `factory.py`: Dependency Injection (ServiceFactory).
+    *   `interfaces.py`: Servis arayüzleri (ABCs).
+    *   `types.py`: TypedDict tanımları (DTOs).
+    *   `router.py`: ActionDispatcher (request routing).
+    *   `utils.py`, `logger.py`: Yardımcı fonksiyonlar ve loglama.
 *   **`modules/`**: İş mantığı (Business Logic).
     *   **`service.py`**: Dış dünyaya açılan kapı. Veriyi işler, formatlar. Scraper'ı veya Database'i çağırır.
     *   **`scraper.py`**: Kirli işleri yapar. HTML parse eder, siteye istek atar. "Data Source" katmanıdır.
-*   **`core/`**: Ortak ayarlar, sabitler ve yardımcı fonksiyonlar.
+    *   **`parser.py`**: *(Bazı modüllerde)* Pure function. HTML → Dict dönüşümü.
 *   **`scripts/`**: Yardımcı araçlar (Local Runner vb.).
 *   **`tests/`**: Test dosyaları.
 

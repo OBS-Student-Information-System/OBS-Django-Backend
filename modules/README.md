@@ -4,7 +4,7 @@ Business Logic (İş Mantığı) katmanıdır. Her modül kendi içinde bağıms
 
 ## Mimari: Service-Scraper Pattern
 
-Bu projede **Separation of Concerns** (İşlerin Ayrılması) prensibi gereği her modül iki ana katmana ayrılmıştır:
+Bu projede **Separation of Concerns** (İşlerin Ayrılması) prensibi gereği her modül iki veya üç katmana ayrılmıştır:
 
 ### 1. Service Layer (`service.py`)
 *   **Görev:** API (Controller) ile Data Source (Scraper) arasındaki köprüdür.
@@ -21,6 +21,13 @@ Bu projede **Separation of Concerns** (İşlerin Ayrılması) prensibi gereği h
     *   HTML parse etmek (BeautifulSoup).
     *   ViewState, Cookie ve Redirect gibi "Web" detaylarıyla uğraşmak.
     *   **NOT:** Bu katman "Kirli" katmandır. Site değişirse burası bozulur, ama Service katmanı sayesinde uygulamanın geri kalanı korunur.
+
+### 3. Parser Layer (`parser.py`) *(Bazı modüllerde)*
+*   **Görev:** HTML → Dict dönüşümünü yapmak.
+*   **Sorumlulukları:**
+    *   Scraper'dan bağımsız, **Pure Function** mantığıyla çalışır.
+    *   Yan etkisi (Side Effect) yoktur.
+    *   Mevcut modüller: `auth`, `grades`.
 
 ## Modüller
 *   **`auth/`**: Giriş işlemleri, Captcha çözme, Session yönetimi (Cookie Relay).

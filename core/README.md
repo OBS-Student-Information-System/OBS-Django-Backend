@@ -15,6 +15,11 @@ Projenin **Ortak Altyapı** katmanıdır. Tüm modüllerin kullandığı paylaş
 *   Yardımcı fonksiyonlar.
 *   `create_session()`: Headerları ayarlanmış güvenli request oturumu oluşturur.
 *   `get_hidden_inputs()`: ASP.NET ViewState verilerini çeker.
+*   `fix_url()`: Relative URL'leri absolute URL'lere çevirir.
+
+### `router.py`
+*   **ActionDispatcher:** Gelen request'leri `action` parametresine göre ilgili handler fonksiyonuna yönlendirir.
+*   Open/Closed Principle'a uygun: Yeni action eklemek için mevcut kodu değiştirmek gerekmez, sadece `register()` çağrılır.
 
 ### `logger.py`
 *   Merkezi loglama yapılandırması.
@@ -24,7 +29,7 @@ Projenin **Ortak Altyapı** katmanıdır. Tüm modüllerin kullandığı paylaş
 
 ### `factory.py` (Dependency Injection)
 *   **ServiceFactory:** Tüm servislerin üretiminden sorumlu merkezi fabrika.
-*   Kodun içinde `new AuthService()` demek yerine `Factory.create_auth_service()` denir.
+*   Kodun içinde `AuthService()` demek yerine `ServiceFactory.create_auth_service()` denir.
 
 ### `interfaces.py` (Dependency Inversion)
 *   **ABCs:** `IAuthService`, `IGradesService` gibi soyut sınıflar.
