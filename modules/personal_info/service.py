@@ -43,3 +43,26 @@ class PersonalInfoService(IPersonalInfoService):
             "message": result.get("message", "Bilinmeyen bir hata oluştu"),
             "error_code": result.get("error_code", "UNKNOWN_ERROR")
         }
+
+    def update_personal_info(self, data: Dict[str, Any], cookies: Dict[str, str] = None) -> Dict[str, Any]:
+        """
+        Orchestrates updating Personal Information.
+        """
+        if cookies:
+            self.update_session_cookies(cookies)
+            
+        logger.info("Updating Personal Information...")
+        result = self.scraper.update_personal_info(data)
+        
+        if result["success"]:
+            return {
+                "success": True,
+                "data": None,
+                "message": result.get("message", "Bilgileriniz başarıyla güncellendi")
+            }
+            
+        return {
+            "success": False,
+            "message": result.get("message", "Güncelleme sırasında bir hata oluştu"),
+            "error_code": result.get("error_code", "UPDATE_ERROR")
+        }

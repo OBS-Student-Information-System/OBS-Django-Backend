@@ -66,3 +66,7 @@ class IPersonalInfoService(IService):
     def get_personal_info(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
         pass
 
+    @abstractmethod
+    def update_personal_info(self, data: Dict[str, Any], cookies: Dict[str, str] = None) -> Dict[str, Any]:
+        pass
+

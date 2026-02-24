@@ -121,3 +121,99 @@ class PersonalInfoScraper:
         except Exception as e:
             logger.exception("Error parsing Personal Info HTML")
             return {"success": False, "message": "HTML ayrıştırma hatası", "error_code": "P_INFO_PARSE_ERROR"}
+
+    def update_personal_info(self, new_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Updates Personal Information on the OBS system.
+        """
+        if not self.session.cookies:
+            logger.error("No cookies found, cannot update personal info.")
+            return {"success": False, "message": "Oturum bulunamadı", "error_code": "NO_SESSION"}
+
+        try:
+            self.session.headers.update({
+                'Referer': DEFAULT_REFERER,
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'same-origin',
+            })
+            _ = self.session.get(self.caller_url, timeout=10)
+            
+            self.session.headers.update({
+                'Referer': self.caller_url,
+                'Sec-Fetch-Dest': 'iframe'
+            })
+            response = self.session.get(self.frame_url, timeout=10)
+            if response.status_code != 200:
+                return {"success": False, "message": "Sayfa alınamadı", "error_code": "FETCH_FAILED"}
+                
+            soup = BeautifulSoup(response.text, 'html.parser')
+            form_data = {}
+            for input_tag in soup.find_all('input'):
+                if input_tag.get('name'):
+                    form_data[input_tag.get('name')] = input_tag.get('value', '')
+                    
+            for select_tag in soup.find_all('select'):
+                if select_tag.get('name'):
+                    selected_option = select_tag.find('option', selected=True)
+                    if selected_option:
+                        form_data[select_tag.get('name')] = selected_option.get('value', '')
+                    else:
+                        form_data[select_tag.get('name')] = ''
+                        
+            field_map = {
+                "phone1": "txtCep1",
+                "phone2": "txtCep2",
+                "phone3": "txtCep3",
+                "email1": "txtEposta1",
+                "email2": "txtEposta2",
+                "web": "txtWeb",
+                "social_media": "txtMsn",
+                "orcid": "txtORCID",
+                
+                "family_address": "txtAileAdres",
+                "family_city": "cmbAileIl",
+                "family_district": "cmbAileIlce",
+                "family_postal_code": "txtAilePostaKod",
+                "family_phone": "txtAileTelefon",
+                
+                "residential_address": "txtIkmAdres",
+                "residential_city": "cmbIkmIl",
+                "residential_district": "cmbIkmIlce",
+                "residential_postal_code": "txtIkmPostaKod",
+                "residential_phone": "txtIkmTel",
+                
+                "bank_name": "txtBankaAdi",
+                "branch_name": "txtBankaSubeAdi",
+                "branch_code": "txtBankaSubeKod",
+                "account_number": "txtBankaHesapNo",
+                "iban": "txtBankaIBAN",
+                "account_holder": "txtHesapSahibiAdSoyad",
+            }
+
+            for key, val in new_data.items():
+                if key in field_map:
+                    form_data[field_map[key]] = val
+                    
+            form_data['__EVENTTARGET'] = 'btnKaydet'
+            form_data['__EVENTARGUMENT'] = ''
+            
+            self.session.headers.update({
+                'Referer': self.frame_url,
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Sec-Fetch-Dest': 'iframe',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'same-origin',
+            })
+            
+            post_response = self.session.post(self.frame_url, data=form_data, timeout=10)
+            
+            if post_response.status_code != 200:
+                logger.error(f"Failed to post Personal Info update. Status code: {post_response.status_code}")
+                return {"success": False, "message": "Güncelleme isteği başarısız oldu", "error_code": "P_INFO_UPDATE_FAILED"}
+                
+            return {"success": True, "message": "Bilgiler başarıyla güncellendi."}
+
+        except Exception as e:
+            logger.exception("Error during Personal Info update")
+            return {"success": False, "message": f"Bağlantı hatası: {str(e)}", "error_code": "P_INFO_UPDATE_ERROR"}
