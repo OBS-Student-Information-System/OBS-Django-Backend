@@ -30,8 +30,8 @@ Backend, Frontend'in **Stale-While-Revalidate** (Önce önbelleği göster, sonr
 3.  **Switching:** Eğer dönem değişikliği isteniyorsa, Backend `__EVENTTARGET` postback simülasyonu ile dönem değiştirir.
 4.  **Parsing:** HTML tablo parse edilir ve JSON array döner.
 
-### 📜 Transcript Flow (Iframe/Caller)
-1.  **Request:** Client -> Backend (`get_transcript`).
+### 📜 Transcript & User Manual Flow (Iframe/Caller)
+1.  **Request:** Client -> Backend (`get_transcript` veya `get_user_manual`).
 2.  **Navigation:** Scraper, tarayıcı taklidi yaparak (`Sec-Fetch-Dest: document`) doğrudan `caller.aspx` adresine gider.
 3.  **Result:** OBS'den dönen PDF stream'i yakalanır ve client'a verilir (veya base64/binary).
 

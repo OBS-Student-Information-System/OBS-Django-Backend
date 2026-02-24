@@ -33,6 +33,7 @@ Bu projede **Separation of Concerns** (İşlerin Ayrılması) prensibi gereği h
 *   **`auth/`**: Giriş işlemleri, Captcha çözme, Session yönetimi (Cookie Relay).
 *   **`grades/`**: Notları görüntüleme. `POST` simülasyonu ile dönem değiştirme.
 *   **`transcript/`**: Transkript görüntüleme. **Caller / Iframe** deseni ile PDF çeker.
+*   **`user_manual/`**: Kullanım Kılavuzu görüntüleme. **Caller / Iframe** deseni ile PDF çeker.
 *   **`schedule/`**: Ders programı. Haftalık tablo parsing işlemi yapar.
 *   **`calendar/`**: Akademik takvim parsing işlemi.
 *   **`food/`**: Yemek listesi. **Public Scraper** (Auth gerektirmez).
