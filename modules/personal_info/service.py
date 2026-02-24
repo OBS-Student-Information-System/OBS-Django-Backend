@@ -14,7 +14,7 @@ class PersonalInfoService(IPersonalInfoService):
     def update_session_cookies(self, cookies: Dict[str, str]) -> None:
         """Updates the underlying scraper's session cookies."""
         if cookies:
-             self.scraper.session_manager.update_cookies(cookies)
+             self.scraper.session.cookies.update(cookies)
 
     def get_personal_info(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
         """

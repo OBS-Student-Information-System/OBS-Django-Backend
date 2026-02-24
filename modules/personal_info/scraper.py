@@ -1,17 +1,14 @@
 import logging
 from typing import Dict, Any, Optional
+from core.utils import create_session
 from bs4 import BeautifulSoup
-
-from core.interfaces import IScraper
-from core.session import SessionManager
 from core.config import PERSONAL_INFO_CALLER_URL, PERSONAL_INFO_FRAME_URL, DEFAULT_REFERER
 
 logger = logging.getLogger(__name__)
 
-class PersonalInfoScraper(IScraper):
-    def __init__(self):
-        self.session_manager = SessionManager()
-        self.session = self.session_manager.get_session()
+class PersonalInfoScraper:
+    def __init__(self, session: Optional[Any] = None):
+        self.session = session if session else create_session()
         self.caller_url = PERSONAL_INFO_CALLER_URL
         self.frame_url = PERSONAL_INFO_FRAME_URL
 
