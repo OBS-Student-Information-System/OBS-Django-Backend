@@ -83,8 +83,12 @@ class PersonalInfoScraper:
                 "contact": {
                     "phone1": get_input_val("txtCep1"),
                     "phone2": get_input_val("txtCep2"),
+                    "phone3": get_input_val("txtCep3"),
                     "email1": get_input_val("txtEposta1"),
                     "email2": get_input_val("txtEposta2"),
+                    "web": get_input_val("txtWeb"),
+                    "social_media": get_input_val("txtMsn"),
+                    "orcid": get_input_val("txtORCID")
                 },
                 "address": {
                     "family": {
@@ -105,6 +109,8 @@ class PersonalInfoScraper:
                 "financial": {
                     "bank_name": get_input_val("txtBankaAdi"),
                     "branch_name": get_input_val("txtBankaSubeAdi"),
+                    "branch_code": get_input_val("txtBankaSubeKod"),
+                    "account_number": get_input_val("txtBankaHesapNo"),
                     "iban": get_input_val("txtBankaIBAN"),
                     "account_holder": get_input_val("txtHesapSahibiAdSoyad")
                 }
