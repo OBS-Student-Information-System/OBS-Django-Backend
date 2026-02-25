@@ -67,11 +67,6 @@ class StudentFileScraper:
             # Use the intelligent bypasser to avoid getting stuck on 'Yönlendirme Yapılıyor' pages
             frame_html = self._fetch_and_bypass_redirects(STUDENT_FILE_FRAME_URL)
             
-            # Temporary Debug Dump to see if values actually exist in the raw response
-            logger.error("\n--- RAW HTML START ---")
-            logger.error(f"{frame_html[:1500]}") # Dump first 1500 chars instead of 5000
-            logger.error("--- RAW HTML END ---\n")
-            
             # Parse the initial frame (Menu 0) to extract Genel Bilgiler
             soup = BeautifulSoup(frame_html, 'html.parser')
             menu0_data = self._parse_genel_bilgiler(soup)
@@ -94,8 +89,7 @@ class StudentFileScraper:
                 "tez_bilgileri": [],
                 "arastirma_raporlari": [],
                 "tez_izleme_sinavlari": [],
-                "tez_savunma_sinavlari": [],
-                "debug_html": frame_html[:2000] # Send first 2000 chars to Flutter app to see if values exist
+                "tez_savunma_sinavlari": []
             }
             
             logger.info("Successfully fetched Genel Bilgiler.")
