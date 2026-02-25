@@ -27,6 +27,12 @@ class StudentFileScraper:
             frame_resp.raise_for_status()
             frame_html = frame_resp.text
             
+            # Temporary Debug Dump to see if values actually exist in the raw response
+            import logging
+            logger.error("\n--- RAW HTML START ---")
+            logger.error(f"{frame_html[:5000]}") # Dump first 5000 chars
+            logger.error("--- RAW HTML END ---\n")
+            
             # Parse the initial frame (Menu 0) to extract Genel Bilgiler
             soup = BeautifulSoup(frame_html, 'html.parser')
             menu0_data = self._parse_genel_bilgiler(soup)
@@ -49,7 +55,8 @@ class StudentFileScraper:
                 "tez_bilgileri": [],
                 "arastirma_raporlari": [],
                 "tez_izleme_sinavlari": [],
-                "tez_savunma_sinavlari": []
+                "tez_savunma_sinavlari": [],
+                "debug_html": frame_html[:2000] # Send first 2000 chars to Flutter app to see if values exist
             }
             
             logger.info("Successfully fetched Genel Bilgiler.")
