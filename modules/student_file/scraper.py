@@ -227,12 +227,11 @@ class StudentFileScraper:
             **viewstate_payload,
             '__EVENTTARGET':   btn_target,
             '__EVENTARGUMENT': '',
-            # ScriptManager header makes ASP.NET return a Partial-Page
-            # (UpdatePanel) response instead of a full HTML document.
-            'ctl00$ScriptManager1': (
-                f'ctl00$ContentPlaceHolder1$UpdatePanel1|'
-                f'ctl00$ContentPlaceHolder1${btn_target}'
-            ),
+            # ScriptManager header – field name must match the control's
+            # ClientID and the value format is "UpdatePanelID|ButtonID".
+            # Using full ctl00$... paths is wrong; the page uses short IDs.
+            'ScriptManager1': f'UpdatePanel1|{btn_target}',
+            '__ASYNCPOST':   'true',
         }
 
         # UpdatePanel POST needs specific headers to be treated correctly
