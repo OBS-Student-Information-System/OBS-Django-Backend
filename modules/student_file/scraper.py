@@ -11,6 +11,35 @@ class StudentFileScraper:
     def __init__(self):
         self.session = requests.Session()
         
+    def _fetch_and_bypass_redirects(self, url: str) -> str:
+        """
+        Fetches an OBS URL and automatically submits any HTML-based 
+        ASP.NET interstitial "Yönlendirme Yapılıyor" (Redirecting) forms.
+        Returns the final HTML text of the true destination page.
+        """
+        import urllib.parse
+        resp = self.session.get(url, allow_redirects=True)
+        resp.raise_for_status()
+        html = resp.text
+        
+        # Guard against up to 3 chaining HTML redirects
+        for _ in range(3):
+            if "redirect.aspx" in html and "Yönlendirme Yapılıyor" in html:
+                logger.info(f"Detected ASP.NET Interstitial HTML Redirect at {resp.url}. Auto-submitting to reach target...")
+                soup = BeautifulSoup(html, 'html.parser')
+                form = soup.find('form')
+                if form:
+                    action_url = urllib.parse.urljoin(resp.url, form.get('action', './redirect.aspx'))
+                    payload = {hidden.get('name'): hidden.get('value', '') for hidden in form.find_all('input', type='hidden')}
+                    resp = self.session.post(action_url, data=payload, allow_redirects=True)
+                    resp.raise_for_status()
+                    html = resp.text
+                else:
+                    break
+            else:
+                break
+        return html
+
     def fetch_student_file(self) -> dict:
         """
         Fetches the initial 'Genel Bilgiler' page and concurrently fetches the other 15 tabs
@@ -23,14 +52,12 @@ class StudentFileScraper:
             logger.debug("Student File Caller URL successful.")
 
             # 2. Get the initial Frame URL (which defaults to menu 0 - Genel Bilgiler)
-            frame_resp = self.session.get(STUDENT_FILE_FRAME_URL, allow_redirects=True)
-            frame_resp.raise_for_status()
-            frame_html = frame_resp.text
+            # Use the intelligent bypasser to avoid getting stuck on 'Yönlendirme Yapılıyor' pages
+            frame_html = self._fetch_and_bypass_redirects(STUDENT_FILE_FRAME_URL)
             
             # Temporary Debug Dump to see if values actually exist in the raw response
-            import logging
             logger.error("\n--- RAW HTML START ---")
-            logger.error(f"{frame_html[:5000]}") # Dump first 5000 chars
+            logger.error(f"{frame_html[:1500]}") # Dump first 1500 chars instead of 5000
             logger.error("--- RAW HTML END ---\n")
             
             # Parse the initial frame (Menu 0) to extract Genel Bilgiler
