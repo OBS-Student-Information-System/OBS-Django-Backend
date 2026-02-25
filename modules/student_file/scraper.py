@@ -23,25 +23,17 @@ class StudentFileScraper:
             logger.debug("Student File Caller URL successful.")
 
             # 2. Get the initial Frame URL (which defaults to menu 0 - Genel Bilgiler)
-            frame_resp = self.session.get(STUDENT_FILE_FRAME_URL)
+            frame_resp = self.session.get(STUDENT_FILE_FRAME_URL, allow_redirects=True)
             frame_resp.raise_for_status()
             frame_html = frame_resp.text
             
-            # Parse the initial frame (Menu 0) to extract ASP.NET viewstate tokens
+            # Parse the initial frame (Menu 0) to extract Genel Bilgiler
             soup = BeautifulSoup(frame_html, 'html.parser')
-            
-            viewstate_el = soup.find('input', {'id': '__VIEWSTATE'})
-            viewstategenerator_el = soup.find('input', {'id': '__VIEWSTATEGENERATOR'})
-            
-            if not viewstate_el or not viewstategenerator_el:
-                logger.error("Could not find __VIEWSTATE in Student File frame.")
-                return {"success": False, "message": "Genel Bilgiler yüklenirken güvenlik tokeni bulunamadı.", "error_code": "MISSING_VIEWSTATE"}
-                
-            viewstate = viewstate_el.get('value', '')
-            viewstategen = viewstategenerator_el.get('value', '')
+            menu0_data = self._parse_genel_bilgiler(soup)
             
             # Final output container
             final_data = {
+                "genel_bilgiler": menu0_data,
                 "egitim_bilgileri": [],
                 "ceza_bilgileri": [],
                 "hazirlik_durumu": [],
@@ -60,89 +52,7 @@ class StudentFileScraper:
                 "tez_savunma_sinavlari": []
             }
             
-            menu_mapping = {
-                0: "genel_bilgiler",
-                1: "egitim_bilgileri",
-                2: "ceza_bilgileri",
-                3: "hazirlik_durumu",
-                4: "burs_ve_belgeler",
-                5: "kulup_topluluk_etk",
-                6: "diger_bilgiler_etk",
-                7: "kayit_dondurma",
-                8: "onur_yuksek_onur",
-                9: "yonetim_kurulu_karar",
-                10: "seminer_bilgileri",
-                11: "yeterlilik_bilgileri",
-                12: "proje_bilgileri",
-                13: "tez_bilgileri",
-                14: "arastirma_raporlari",
-                15: "tez_izleme_sinavlari",
-                16: "tez_savunma_sinavlari"
-            }
-            
-            # Common payload for UpdatePanel POST
-            base_payload = {
-                '__EVENTARGUMENT': '',
-                '__VIEWSTATE': viewstate,
-                '__VIEWSTATEGENERATOR': viewstategen,
-                '__SCROLLPOSITIONX': '0',
-                '__SCROLLPOSITIONY': '0',
-                '__ASYNCPOST': 'true',
-            }
-            
-            # Add existing form fields to prevent Validation exceptions
-            form_fields = ["txtInfoNormalSure", "txtInfoCAP", "txtOgrenciSinif", "txtInfoYANDAL", 
-                           "txtInfoOkuduguYil", "txtInfoCeza", "txtInfoYeniKanun", "txtInfoDondurma", 
-                           "txtInfoDersKayit", "txtInfoHarc", "txtInfoFaaliyet", "txtInfoErasmus"]
-                           
-            for k in form_fields:
-                field_el = soup.find('input', {'name': k})
-                if field_el:
-                    base_payload[k] = field_el.get('value', '')
-                    
-            def fetch_menu(index):
-                payload = base_payload.copy()
-                payload['ScriptManager1'] = f'UpdatePanel1|btnMenu{index}'
-                payload['__EVENTTARGET'] = f'btnMenu{index}'
-                
-                headers = self.session.headers.copy()
-                headers['X-Requested-With'] = 'XMLHttpRequest'
-                headers['X-MicrosoftAjax'] = 'Delta=true'
-                headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
-                
-                try:
-                    resp = self.session.post(
-                        STUDENT_FILE_FRAME_URL,
-                        data=payload,
-                        headers=headers,
-                        timeout=10 # Reduced timeout to avoid hanging
-                    )
-                    resp.raise_for_status()
-                    target_key = menu_mapping[index]
-                    
-                    if index == 0:
-                        parsed_data = self._parse_genel_bilgiler(BeautifulSoup(resp.text, 'html.parser'))
-                        return target_key, parsed_data
-                    else:
-                        parsed_grid = self._parse_grid(resp.text)
-                        return target_key, parsed_grid
-                except Exception as e:
-                    logger.error(f"Error fetching Student File Menu {index}: {str(e)}")
-                    if index == 0:
-                        return menu_mapping[index], {}
-                    return menu_mapping[index], []
-
-            # Execute fetching concurrently to save time
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                future_to_index = {executor.submit(fetch_menu, i): i for i in range(0, 17)}
-                for future in as_completed(future_to_index):
-                    try:
-                        key, data = future.result()
-                        final_data[key] = data
-                    except Exception as exc:
-                        logger.error(f"Student File concurrent fetch generated an exception: {exc}")
-
-            logger.info("Successfully fetched and aggregated all 16 Student File menus.")
+            logger.info("Successfully fetched Genel Bilgiler.")
             return {"success": True, "data": final_data}
 
         except Exception as e:
