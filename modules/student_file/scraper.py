@@ -147,8 +147,13 @@ class StudentFileScraper:
 
     def _parse_genel_bilgiler(self, soup):
         def get_val(name):
-            el = soup.find('input', {'name': name})
-            return el.get('value', '').strip() if el else ''
+            el = soup.find(id=re.compile(name))
+            if el:
+                if el.name in ['input', 'textarea']:
+                    return el.get('value', '').strip()
+                else:
+                    return el.get_text(separator=" ", strip=True)
+            return ''
 
         return {
             "program_normal_azami_sure": get_val('txtInfoNormalSure'),
