@@ -40,12 +40,8 @@ class StudentFileScraper:
             viewstate = viewstate_el.get('value', '')
             viewstategen = viewstategenerator_el.get('value', '')
             
-            # Extract Menu 0 (Genel Bilgiler) Data
-            menu0_data = self._parse_genel_bilgiler(soup)
-            
-            # Prepare for parallel fetching of menus 1 to 16
+            # Final output container
             final_data = {
-                "genel_bilgiler": menu0_data,
                 "egitim_bilgileri": [],
                 "ceza_bilgileri": [],
                 "hazirlik_durumu": [],
@@ -65,6 +61,7 @@ class StudentFileScraper:
             }
             
             menu_mapping = {
+                0: "genel_bilgiler",
                 1: "egitim_bilgileri",
                 2: "ceza_bilgileri",
                 3: "hazirlik_durumu",
@@ -122,15 +119,22 @@ class StudentFileScraper:
                     )
                     resp.raise_for_status()
                     target_key = menu_mapping[index]
-                    parsed_grid = self._parse_grid(resp.text)
-                    return target_key, parsed_grid
+                    
+                    if index == 0:
+                        parsed_data = self._parse_genel_bilgiler(BeautifulSoup(resp.text, 'html.parser'))
+                        return target_key, parsed_data
+                    else:
+                        parsed_grid = self._parse_grid(resp.text)
+                        return target_key, parsed_grid
                 except Exception as e:
                     logger.error(f"Error fetching Student File Menu {index}: {str(e)}")
+                    if index == 0:
+                        return menu_mapping[index], {}
                     return menu_mapping[index], []
 
             # Execute fetching concurrently to save time
             with ThreadPoolExecutor(max_workers=5) as executor:
-                future_to_index = {executor.submit(fetch_menu, i): i for i in range(1, 17)}
+                future_to_index = {executor.submit(fetch_menu, i): i for i in range(0, 17)}
                 for future in as_completed(future_to_index):
                     try:
                         key, data = future.result()
