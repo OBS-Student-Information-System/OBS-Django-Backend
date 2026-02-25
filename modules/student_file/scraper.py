@@ -42,16 +42,28 @@ class StudentFileScraper:
 
     def fetch_student_file(self) -> dict:
         """
-        Fetches the initial 'Genel Bilgiler' page and concurrently fetches the other 15 tabs
-        using ThreadPoolExecutor to aggregate the entire student file.
+        Fetches the initial 'Genel Bilgiler' page using strict security headers.
         """
+        from core.config import DEFAULT_REFERER
         try:
             # 1. Trigger the Caller URL to prepare backend session state
+            self.session.headers.update({
+                'Referer': DEFAULT_REFERER,
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'same-origin',
+            })
             caller_resp = self.session.get(STUDENT_FILE_CALLER_URL)
             caller_resp.raise_for_status()
             logger.debug("Student File Caller URL successful.")
 
             # 2. Get the initial Frame URL (which defaults to menu 0 - Genel Bilgiler)
+            self.session.headers.update({
+                'Referer': STUDENT_FILE_CALLER_URL,
+                'Sec-Fetch-Dest': 'iframe',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'same-origin',
+            })
             # Use the intelligent bypasser to avoid getting stuck on 'Yönlendirme Yapılıyor' pages
             frame_html = self._fetch_and_bypass_redirects(STUDENT_FILE_FRAME_URL)
             
