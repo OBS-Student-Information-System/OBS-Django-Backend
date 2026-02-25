@@ -147,7 +147,16 @@ class StudentFileScraper:
 
     def _parse_genel_bilgiler(self, soup):
         def get_val(name):
-            el = soup.find(id=re.compile(name))
+            # Try exact match first. The ASP.NET elements might be generated dynamically
+            # For example: ctl00_ContentPlaceHolder1_txtInfoNormalSure
+            # But the student info page uses direct IDs. We will find tags that *contain* the name
+            # string since ASP.Net prefixes them with ctl00_ContentPlaceHolder1_
+            import re
+            el = soup.find(id=re.compile(f".*{name}.*"))
+            if not el:
+                # Also try matching span or input directly 
+                el = soup.find(lambda tag: tag.has_attr('id') and name in tag['id'])
+            
             if el:
                 if el.name in ['input', 'textarea']:
                     return el.get('value', '').strip()
