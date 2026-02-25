@@ -124,6 +124,16 @@ def handle_update_personal_info(body, context):
     result = personal_info_service.update_personal_info(data=data, cookies=cookies)
     context._send_json_response(result)
 
+def handle_get_student_file(body, context):
+    cookies = body.get('cookies', {})
+    if not cookies:
+        context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
+        return
+        
+    student_file_service = ServiceFactory.create_student_file_service()
+    result = student_file_service.get_student_file(cookies=cookies)
+    context._send_json_response(result)
+
 
 # --- Dispatcher Configuration ---
 dispatcher = ActionDispatcher()
@@ -138,6 +148,7 @@ dispatcher.register('food_menu', handle_food_menu)
 dispatcher.register('get_user_manual', handle_get_user_manual)
 dispatcher.register('get_personal_info', handle_get_personal_info)
 dispatcher.register('update_personal_info', handle_update_personal_info)
+dispatcher.register('get_student_file', handle_get_student_file)
 
 
 class handler(BaseHTTPRequestHandler):

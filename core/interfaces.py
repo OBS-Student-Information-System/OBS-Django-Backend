@@ -70,3 +70,8 @@ class IPersonalInfoService(IService):
     def update_personal_info(self, data: Dict[str, Any], cookies: Dict[str, str] = None) -> Dict[str, Any]:
         pass
 
+class IStudentFileService(IService):
+    @abstractmethod
+    def get_student_file(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
+        pass
+
