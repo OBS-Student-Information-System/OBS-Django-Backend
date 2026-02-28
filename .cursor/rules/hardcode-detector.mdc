@@ -1,0 +1,33 @@
+---
+description: Hardcode Hunter (Zero Tolerance) - Detects hardcoded values that violate the SaaS multi-tenant architecture
+alwaysApply: true
+---
+
+# Hardcode Detection Protocol (Zero Tolerance)
+
+## Rule
+When reviewing or writing code, if you detect ANY hardcoded URL, institution name, CSS selector, or magic value outside the centralized config — **STOP the current task immediately**.
+
+## Action
+Report to the user:
+> "HARDCODE TESPİTİ: `[file:line]` — `[the hardcoded value]`. Bunu SaaS yapısına uygun olarak Config'e taşıyalım mı?"
+
+## What Counts as Hardcoded
+- Domain URLs outside `core/config.py` (e.g., `"https://obs.ozal.edu.tr"` in a scraper file)
+- CSS selectors outside `SELECTORS` dict in `core/config.py`
+- Error messages containing institution-specific names
+- Endpoint paths not defined in config constants
+- Any university-specific data (name, logo path, theme color) outside the tenant config system
+
+## Exceptions (ONLY these are acceptable)
+- Centralized constants in `core/config.py` — this IS the config layer for Phase 1 (scraper). These values are CRITICAL and must never be lost during refactoring.
+- HTTP headers and standard protocol values (User-Agent, Accept, etc.)
+- Test fixtures and mock data
+- Python standard library constants
+- Logging format strings (not user-facing)
+
+## Config Data Preservation (CRITICAL)
+`core/config.py` contains irreplaceable scraper URLs, CSS selectors, and form field identifiers. During any refactor or migration:
+1. Audit every value in `config.py` before modifying
+2. Ensure ALL values are preserved in the new location
+3. NEVER delete a config value without confirming it's migrated
