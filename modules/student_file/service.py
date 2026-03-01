@@ -29,19 +29,19 @@ class StudentFileService(IStudentFileService):
         logger.info("Fetching Student File...")
         result = self.scraper.fetch_student_file()
         
-        if result["success"]:
+        if result.get("status") == "success":
             # Add fetch timestamp metadata
             fetched_at = datetime.now().isoformat()
             result["data"]["fetched_at"] = fetched_at
             
             return {
-                "success": True,
+                "status": "success",
                 "data": result["data"],
                 "message": "Öğrenci dosyası (Genel Bilgiler) verileri başarıyla çekildi."
             }
             
         return {
-            "success": False,
+            "status": "error",
             "message": result.get("message", "Öğrenci dosyası verileri çekilirken bir hata oluştu."),
             "error_code": result.get("error_code", "STUDENT_FILE_FETCH_ERROR")
         }

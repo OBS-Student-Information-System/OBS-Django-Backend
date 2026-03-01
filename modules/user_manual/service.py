@@ -25,7 +25,7 @@ class UserManualService:
         """
         if not cookies:
             return {
-                "success": False,
+                "status": "error",
                 "message": "Cookies are required"
             }
 
@@ -35,7 +35,7 @@ class UserManualService:
         # Fetch the PDF
         result = self.scraper.fetch_user_manual()
         
-        if result["success"]:
+        if result.get("status") == "success":
             try:
                 # Convert raw PDF bytes to Base64
                 pdf_bytes = result["data"]
@@ -47,7 +47,7 @@ class UserManualService:
                 fetched_at = datetime.datetime.now().isoformat()
                 
                 return {
-                    "success": True,
+                    "status": "success",
                     "data": {
                         "pdf_base64": pdf_base64,
                         "size_bytes": len(pdf_bytes),
@@ -58,7 +58,7 @@ class UserManualService:
             except Exception as e:
                 logger.exception("Error encoding User Manual PDF")
                 return {
-                    "success": False,
+                    "status": "error",
                     "message": f"PDF okuma hatası: {str(e)}"
                 }
         else:

@@ -1,0 +1,98 @@
+{
+    "tenant_id": "mtu",
+    "version": "1.0",
+    "institution": {
+        "name_full": "Malatya Turgut Özal Üniversitesi",
+        "name_short": "MTÜ",
+        "obs_base_url": "https://mtu-obs-backend.vercel.app/api"
+    },
+    "branding": {
+        "assets": {
+            "logo_square": "assets/mtu/logo_square.png",
+            "logo_horizontal": "assets/mtu/logo_horizontal.png",
+            "logo_vertical": "assets/mtu/logo_vertical.png",
+            "logo_circle": "assets/mtu/logo_circle.png"
+        }
+    },
+    "theme_config": {
+        "mode": "light",
+        "palette": {
+            "primary": "#262F59",
+            "secondary": "#12A7CD",
+            "accent": "#EF7F1A",
+            "neutral": "#727271",
+            "special": "#B99C71"
+        },
+        "shapes": {
+            "radius_base": 12
+        }
+    },
+    "modules": {
+        "grades": {
+            "enabled": true,
+            "show_gpa": true,
+            "show_letter_grade": true
+        },
+        "attendance": {
+            "enabled": true
+        },
+        "schedule": {
+            "enabled": true,
+            "show_room_info": true
+        },
+        "food": {
+            "enabled": true,
+            "menu_url": "https://sksdb.ozal.edu.tr/yemek_listesi"
+        },
+        "announcements": {
+            "enabled": true
+        },
+        "library": {
+            "enabled": false
+        }
+    },
+    "scraper": {
+        "obs_domain": "https://obs.ozal.edu.tr",
+        "obs_root_path": "/oibs/std",
+        "selectors": {
+            "captcha_img": "imgCaptchaImg",
+            "login_form": "frmOgrLogin",
+            "login_error_label": "lblSonuclar",
+            "grades_table": "grd_not_listesi",
+            "term_dropdown": "cmbDonemler",
+            "login_btn": "btnLogin",
+            "username_field": "txtParamT01",
+            "password_field": "txtParamT02",
+            "password_field_alt": "txtParamT1",
+            "captcha_field": "txtSecCode",
+            "screen_width": "txt_scrWidth",
+            "screen_height": "txt_scrHeight",
+            "student_name": "lblOgrenciAdSoyad",
+            "gpa_label": "lblAGNO",
+            "profile_photo_img": "imgPhoto"
+        },
+        "endpoints": {
+            "login": "login.aspx",
+            "dashboard": "duyuru_new.aspx",
+            "grades": "not_listesi_op.aspx",
+            "schedule": "caller.aspx?curPage=108",
+            "transcript": "caller.aspx?curPage=109",
+            "calendar": "caller.aspx?curPage=101",
+            "personal_info_caller": "caller.aspx?curPage=100",
+            "personal_info_frame": "ogr_ozluk.aspx",
+            "student_file_caller": "caller.aspx?curPage=111",
+            "student_file_frame": "ogr_genel_bilgiler.aspx",
+            "user_manual": "caller.aspx?curPage=98"
+        },
+        "timeout_seconds": 10,
+        "error_strings": {
+            "captcha": ["Güvenlik kodu hatalı", "captcha"],
+            "credentials": ["Kullanıcı adı veya şifresi geçersiz", "geçersiz"]
+        }
+    },
+    "features": {
+        "offline_mode": true,
+        "dark_mode": false,
+        "multi_language": false
+    }
+}

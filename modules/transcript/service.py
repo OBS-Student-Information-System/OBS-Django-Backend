@@ -59,7 +59,7 @@ class TranscriptService:
             # Fetch PDF from scraper
             result = self.scraper.fetch_transcript()
             
-            if result["success"]:
+            if result.get("status") == "success":
                 pdf_bytes = result["data"]
                 
                 # Convert to base64
@@ -72,7 +72,7 @@ class TranscriptService:
                 logger.info(f"Successfully encoded PDF to base64. Original size: {len(pdf_bytes)} bytes")
                 
                 return {
-                    "success": True,
+                    "status": "success",
                     "data": {
                         "pdf_base64": pdf_base64,
                         "size_bytes": len(pdf_bytes),
@@ -84,7 +84,7 @@ class TranscriptService:
                 # Scraper returned error
                 logger.error(f"Scraper failed: {result.get('error')}")
                 return {
-                    "success": False,
+                    "status": "error",
                     "message": result.get("error", "Failed to fetch transcript"),
                     "error_code": "FETCH_FAILED"
                 }
@@ -92,7 +92,7 @@ class TranscriptService:
         except Exception as e:
             logger.exception(f"Error in get_transcript: {e}")
             return {
-                "success": False,
+                "status": "error",
                 "message": f"Server error: {str(e)}",
                 "error_code": "SERVER_ERROR"
             }

@@ -26,20 +26,20 @@ class PersonalInfoService(IPersonalInfoService):
         logger.info("Fetching Personal Information...")
         result = self.scraper.fetch_personal_info()
         
-        if result["success"]:
+        if result.get("status") == "success":
             # Add fetch timestamp metadata
             fetched_at = datetime.now().isoformat()
             result["data"]["fetched_at"] = fetched_at
             
             return {
-                "success": True,
+                "status": "success",
                 "data": result["data"],
                 "message": "Özlük Bilgileri başarıyla getirildi"
             }
             
         # Return error envelope
         return {
-            "success": False,
+            "status": "error",
             "message": result.get("message", "Bilinmeyen bir hata oluştu"),
             "error_code": result.get("error_code", "UNKNOWN_ERROR")
         }
@@ -54,15 +54,15 @@ class PersonalInfoService(IPersonalInfoService):
         logger.info("Updating Personal Information...")
         result = self.scraper.update_personal_info(data)
         
-        if result["success"]:
+        if result.get("status") == "success":
             return {
-                "success": True,
+                "status": "success",
                 "data": None,
                 "message": result.get("message", "Bilgileriniz başarıyla güncellendi")
             }
             
         return {
-            "success": False,
+            "status": "error",
             "message": result.get("message", "Güncelleme sırasında bir hata oluştu"),
             "error_code": result.get("error_code", "UPDATE_ERROR")
         }

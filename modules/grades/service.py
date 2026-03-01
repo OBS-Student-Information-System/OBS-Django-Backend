@@ -25,7 +25,7 @@ class GradesService:
         # In the future, this could check a Cache/Database first before scraping
         result = self.scraper.fetch_grades(term_id)
         
-        if result["success"]:
+        if result.get("status") == "success":
             # We can enrich the data here if needed (e.g., adding 'fetched_at' timestamp)
             import datetime
             result["fetched_at"] = datetime.datetime.now().isoformat()

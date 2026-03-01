@@ -2,15 +2,17 @@ import logging
 from typing import Dict, Any, Optional
 from core.utils import create_session
 from bs4 import BeautifulSoup
-from core.config import PERSONAL_INFO_CALLER_URL, PERSONAL_INFO_FRAME_URL, DEFAULT_REFERER
+from core.tenant_config import get_config
 
 logger = logging.getLogger(__name__)
 
 class PersonalInfoScraper:
     def __init__(self, session: Optional[Any] = None):
         self.session = session if session else create_session()
-        self.caller_url = PERSONAL_INFO_CALLER_URL
-        self.frame_url = PERSONAL_INFO_FRAME_URL
+        cfg = get_config()
+        self.caller_url = cfg.personal_info_caller_url
+        self.frame_url = cfg.personal_info_frame_url
+        self._default_referer = cfg.default_referer
 
     def fetch_personal_info(self) -> Dict[str, Any]:
         """
@@ -20,12 +22,12 @@ class PersonalInfoScraper:
         """
         if not self.session.cookies:
             logger.error("No cookies found, cannot fetch personal info.")
-            return {"success": False, "message": "Oturum bulunamadı", "error_code": "NO_SESSION"}
+            return {"status": "error", "message": "Oturum bulunamadı", "error_code": "NO_SESSION"}
 
         try:
             # Step 1: Hit Caller
             self.session.headers.update({
-                'Referer': DEFAULT_REFERER,
+                'Referer': self._default_referer,
                 'Sec-Fetch-Dest': 'document',
                 'Sec-Fetch-Mode': 'navigate',
                 'Sec-Fetch-Site': 'same-origin',
@@ -45,18 +47,18 @@ class PersonalInfoScraper:
             
             if response.status_code != 200:
                 logger.error(f"Failed to fetch Personal Info frame. Status code: {response.status_code}")
-                return {"success": False, "message": "Özlük Bilgileri sayfası alınamadı", "error_code": "P_INFO_FETCH_FAILED"}
+                return {"status": "error", "message": "Özlük Bilgileri sayfası alınamadı", "error_code": "P_INFO_FETCH_FAILED"}
                 
             # Check for redirect to login (Session expired)
             if "login.aspx" in response.url.lower():
                  logger.warning("Session expired, redirected to login.")
-                 return {"success": False, "message": "Oturum süresi doldu", "error_code": "SESSION_EXPIRED"}
+                 return {"status": "error", "message": "Oturum süresi doldu", "error_code": "SESSION_EXPIRED"}
                  
             return self._parse_personal_info(response.text)
 
         except Exception as e:
             logger.exception("Error during Personal Info fetch")
-            return {"success": False, "message": f"Bağlantı hatası: {str(e)}", "error_code": "P_INFO_SCRAPE_ERROR"}
+            return {"status": "error", "message": f"Bağlantı hatası: {str(e)}", "error_code": "P_INFO_SCRAPE_ERROR"}
 
     def _parse_personal_info(self, html: str) -> Dict[str, Any]:
         """
@@ -116,11 +118,11 @@ class PersonalInfoScraper:
                 }
             }
             logger.info("Successfully parsed Personal Information.")
-            return {"success": True, "data": data}
+            return {"status": "success", "data": data}
             
         except Exception as e:
             logger.exception("Error parsing Personal Info HTML")
-            return {"success": False, "message": "HTML ayrıştırma hatası", "error_code": "P_INFO_PARSE_ERROR"}
+            return {"status": "error", "message": "HTML ayrıştırma hatası", "error_code": "P_INFO_PARSE_ERROR"}
 
     def update_personal_info(self, new_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -128,11 +130,11 @@ class PersonalInfoScraper:
         """
         if not self.session.cookies:
             logger.error("No cookies found, cannot update personal info.")
-            return {"success": False, "message": "Oturum bulunamadı", "error_code": "NO_SESSION"}
+            return {"status": "error", "message": "Oturum bulunamadı", "error_code": "NO_SESSION"}
 
         try:
             self.session.headers.update({
-                'Referer': DEFAULT_REFERER,
+                'Referer': self._default_referer,
                 'Sec-Fetch-Dest': 'document',
                 'Sec-Fetch-Mode': 'navigate',
                 'Sec-Fetch-Site': 'same-origin',
@@ -145,7 +147,7 @@ class PersonalInfoScraper:
             })
             response = self.session.get(self.frame_url, timeout=10)
             if response.status_code != 200:
-                return {"success": False, "message": "Sayfa alınamadı", "error_code": "FETCH_FAILED"}
+                return {"status": "error", "message": "Sayfa alınamadı", "error_code": "FETCH_FAILED"}
                 
             soup = BeautifulSoup(response.text, 'html.parser')
             form_data = {}
@@ -210,10 +212,10 @@ class PersonalInfoScraper:
             
             if post_response.status_code != 200:
                 logger.error(f"Failed to post Personal Info update. Status code: {post_response.status_code}")
-                return {"success": False, "message": "Güncelleme isteği başarısız oldu", "error_code": "P_INFO_UPDATE_FAILED"}
+                return {"status": "error", "message": "Güncelleme isteği başarısız oldu", "error_code": "P_INFO_UPDATE_FAILED"}
                 
-            return {"success": True, "message": "Bilgiler başarıyla güncellendi."}
+            return {"status": "success", "message": "Bilgiler başarıyla güncellendi."}
 
         except Exception as e:
             logger.exception("Error during Personal Info update")
-            return {"success": False, "message": f"Bağlantı hatası: {str(e)}", "error_code": "P_INFO_UPDATE_ERROR"}
+            return {"status": "error", "message": f"Bağlantı hatası: {str(e)}", "error_code": "P_INFO_UPDATE_ERROR"}

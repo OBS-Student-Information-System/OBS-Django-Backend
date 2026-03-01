@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from typing import List, Dict, Optional
 import re
 
-from core.config import SELECTORS
+from core.tenant_config import get_config
 
 def parse_my_grades(raw_text: str) -> Dict[str, Optional[str]]:
     """Parse individual student grades from raw text."""
@@ -37,13 +37,13 @@ def parse_grades_table(html_content: str) -> List[Dict]:
     """Parse the main grades table from OBS HTML."""
     soup = BeautifulSoup(html_content, 'lxml')
     
-    table = soup.find(id=SELECTORS["GRADES_TABLE"])
+    sel = get_config().selectors
+    table = soup.find(id=sel["GRADES_TABLE"])
     if not table:
-        return [] # Return empty list instead of raising exception
+        return []
     
-    # Get semester info
     term_id = "20251"
-    term_select = soup.find('select', id=SELECTORS["TERM_DROPDOWN"])
+    term_select = soup.find('select', id=sel["TERM_DROPDOWN"])
     if term_select:
         selected_opt = term_select.find('option', selected=True)
         if selected_opt:

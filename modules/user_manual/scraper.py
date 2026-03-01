@@ -1,7 +1,7 @@
 import logging
 import requests
 from typing import Dict, Any
-from core.config import USER_MANUAL_URL, DEFAULT_REFERER, DEFAULT_HEADERS
+from core.tenant_config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -12,12 +12,15 @@ class UserManualScraper:
     """
     def __init__(self):
         self.session = requests.Session()
-        self.user_manual_url = USER_MANUAL_URL
+        cfg = get_config()
+        self.user_manual_url = cfg.user_manual_url
+        self._default_referer = cfg.default_referer
+        self._default_headers = cfg.default_headers
         
     def initialize_session(self, cookies: Dict[str, str]):
         """Initializes the request session with provided cookies."""
         self.session.cookies.update(cookies)
-        self.session.headers.update(DEFAULT_HEADERS)
+        self.session.headers.update(self._default_headers)
         
     def fetch_user_manual(self) -> Dict[str, Any]:
         """
@@ -30,7 +33,7 @@ class UserManualScraper:
         try:
             # Add specific headers required for downloading files
             self.session.headers.update({
-                'Referer': DEFAULT_REFERER,
+                'Referer': self._default_referer,
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Sec-Fetch-Dest': 'document',
                 'Sec-Fetch-Mode': 'navigate',
@@ -50,7 +53,7 @@ class UserManualScraper:
             if "login.aspx" in response.url.lower():
                 logger.warning("Session expired during User Manual fetch. Redirected to login.")
                 return {
-                    "success": False,
+                    "status": "error",
                     "message": "Oturum süresi doldu, lütfen tekrar giriş yapın."
                 }
                 
@@ -67,38 +70,38 @@ class UserManualScraper:
                         logger.warning(f"Downloaded PDF seems suspiciously small: {pdf_size} bytes")
                     
                     return {
-                        "success": True,
+                        "status": "success",
                         "data": response.content,
                         "message": "Success"
                     }
                 else:
                     logger.error(f"Response is not a PDF. Content-Type: {content_type}")
                     return {
-                        "success": False,
+                        "status": "error",
                         "message": "Beklenen belge formatı alınamadı (PDF değil)."
                     }
             else:
                 logger.error(f"Failed to fetch User Manual. Status Code: {response.status_code}")
                 return {
-                    "success": False,
+                    "status": "error",
                     "message": f"Belge sunucusundan hata alındı (Kod: {response.status_code})"
                 }
                 
         except requests.exceptions.Timeout:
             logger.error("User Manual fetch timed out")
             return {
-                "success": False,
+                "status": "error",
                 "message": "Sunucu yanıt vermedi (Zaman aşımı)."
             }
         except requests.exceptions.RequestException as e:
             logger.error(f"Request Error fetching User Manual: {str(e)}")
             return {
-                "success": False,
+                "status": "error",
                 "message": "Belge indirilirken bir bağlantı hatası oluştu."
             }
         except Exception as e:
             logger.exception("Unexpected error fetching User Manual")
             return {
-                "success": False,
+                "status": "error",
                 "message": f"Beklenmeyen bir hata oluştu: {str(e)}"
             }

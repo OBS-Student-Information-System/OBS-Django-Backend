@@ -3,6 +3,7 @@ import json
 from core.factory import ServiceFactory
 from core.logger import setup_logger
 from core.router import ActionDispatcher
+from core.exceptions import SessionExpiredError
 
 logger = setup_logger("api.index")
 
@@ -29,7 +30,7 @@ def handle_login(body, context):
         body.get('view_state_data', {})
     )
     
-    if result.get('success'):
+    if result.get('status') == 'success':
         context._send_response(200, {"status": "success", "data": result})
     else:
         context._send_response(401, {
@@ -61,9 +62,12 @@ def handle_get_terms(body, context):
     context._send_json_response(result)
 
 def handle_get_calendar(body, context):
-    calendar_service = ServiceFactory.create_calendar_service()
-    calendar_data = calendar_service.get_calendar(cookies=body.get('cookies', {}))
-    context._send_response(200, {"status": "success", "data": calendar_data})
+    try:
+        calendar_service = ServiceFactory.create_calendar_service()
+        calendar_data = calendar_service.get_calendar(cookies=body.get('cookies', {}))
+        context._send_response(200, {"status": "success", "data": calendar_data})
+    except SessionExpiredError:
+        context._send_response(401, {"status": "error", "message": "Oturum süresi doldu", "error_code": "SESSION_EXPIRED"})
 
 def handle_get_schedule(body, context):
     cookies = body.get('cookies', {})
@@ -71,10 +75,13 @@ def handle_get_schedule(body, context):
          context._send_response(401, {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"})
          return
 
-    schedule_service = ServiceFactory.create_schedule_service()
-    schedule_service.update_session_cookies(cookies)
-    schedule_data = schedule_service.get_schedule()
-    context._send_response(200, {"status": "success", "data": schedule_data})
+    try:
+        schedule_service = ServiceFactory.create_schedule_service()
+        schedule_service.update_session_cookies(cookies)
+        schedule_data = schedule_service.get_schedule()
+        context._send_response(200, {"status": "success", "data": schedule_data})
+    except SessionExpiredError:
+        context._send_response(401, {"status": "error", "message": "Oturum süresi doldu", "error_code": "SESSION_EXPIRED"})
 
 def handle_get_transcript(body, context):
     cookies = body.get('cookies', {})
@@ -176,13 +183,15 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(data).encode('utf-8'))
 
     def _send_json_response(self, result):
-        if result.get('success'):
+        if result.get('status') == 'success':
             response_data = {"status": "success", "data": result.get('data', []), "message": result.get('message')}
             if result.get('gpa') is not None:
                 response_data['gpa'] = result['gpa']
             self._send_response(200, response_data)
         else:
-            self._send_response(500, {"status": "error", "message": result.get('message'), "error_code": result.get('error_code')})
+            error_code = result.get('error_code')
+            status_code = 401 if error_code == "SESSION_EXPIRED" else 500
+            self._send_response(status_code, {"status": "error", "message": result.get('message'), "error_code": error_code})
     
     def do_GET(self):
          self._send_response(200, {"status": "alive", "message": "OBS Backend is running. Use POST."})

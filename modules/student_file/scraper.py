@@ -3,11 +3,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from core.config import (
-    STUDENT_FILE_CALLER_URL,
-    STUDENT_FILE_FRAME_URL,
-    DEFAULT_REFERER,
-)
+from core.tenant_config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +34,13 @@ MENU_TARGETS = {
 # Maximum parallel workers – intentionally conservative to avoid flooding the
 # OBS server from a shared VPS (4 concurrent POSTs is safe and still fast).
 _MAX_WORKERS = 4
+_cfg = None
+
+def _get_cfg():
+    global _cfg
+    if _cfg is None:
+        _cfg = get_config()
+    return _cfg
 
 
 class StudentFileScraper:
@@ -65,23 +68,23 @@ class StudentFileScraper:
         try:
             # Step 1: Warm-up caller page
             self.session.headers.update({
-                'Referer':         DEFAULT_REFERER,
+                'Referer':         _get_cfg().default_referer,
                 'Sec-Fetch-Dest':  'document',
                 'Sec-Fetch-Mode':  'navigate',
                 'Sec-Fetch-Site':  'same-origin',
             })
-            caller_resp = self.session.get(STUDENT_FILE_CALLER_URL, timeout=15)
+            caller_resp = self.session.get(_get_cfg().student_file_caller_url, timeout=15)
             caller_resp.raise_for_status()
             logger.debug("Student File caller URL succeeded.")
 
             # Step 2: Fetch initial frame (Menu 0) with interstitial bypass
             self.session.headers.update({
-                'Referer':        STUDENT_FILE_CALLER_URL,
+                'Referer':        _get_cfg().student_file_caller_url,
                 'Sec-Fetch-Dest': 'iframe',
                 'Sec-Fetch-Mode': 'navigate',
                 'Sec-Fetch-Site': 'same-origin',
             })
-            frame_html = self._fetch_and_bypass_redirects(STUDENT_FILE_FRAME_URL)
+            frame_html = self._fetch_and_bypass_redirects(_get_cfg().student_file_frame_url)
 
             # Step 3: Parse Menu 0
             soup0 = BeautifulSoup(frame_html, 'html.parser')
@@ -108,13 +111,13 @@ class StudentFileScraper:
                 "Student File fetch complete. Non-empty menus: %s",
                 [k for k, v in final_data.items() if v]
             )
-            return {"success": True, "data": final_data}
+            return {"status": "success", "data": final_data}
 
         except Exception as e:
             logger.error("Unexpected error in StudentFileScraper: %s", str(e), exc_info=True)
             return {
-                "success":    False,
-                "message":    "Bağlantı sırasında bir hata oluştu.",
+                "status": "error",
+                "message": "Bağlantı sırasında bir hata oluştu.",
                 "error_code": "SCRAPE_CONNECTION_ERROR",
             }
 
@@ -236,7 +239,7 @@ class StudentFileScraper:
 
         # UpdatePanel POST needs specific headers to be treated correctly
         headers = {
-            'Referer':          STUDENT_FILE_FRAME_URL,
+            'Referer':          _get_cfg().student_file_frame_url,
             'Sec-Fetch-Dest':   'empty',
             'Sec-Fetch-Mode':   'cors',
             'Sec-Fetch-Site':   'same-origin',
@@ -246,7 +249,7 @@ class StudentFileScraper:
         }
 
         resp = self.session.post(
-            STUDENT_FILE_FRAME_URL,
+            _get_cfg().student_file_frame_url,
             data=post_data,
             headers=headers,
             timeout=20,

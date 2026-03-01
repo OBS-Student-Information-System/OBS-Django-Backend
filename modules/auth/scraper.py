@@ -6,7 +6,7 @@ import base64
 import requests
 from bs4 import BeautifulSoup
 from typing import Dict, Any, Optional
-from core.config import LOGIN_URL, SELECTORS, ERROR_STRINGS, OBS_DOMAIN, DEFAULT_REFERER
+from core.tenant_config import get_config
 from core.utils import create_session, fix_url
 from core.logger import setup_logger
 from modules.auth.parser import parse_login_page, parse_login_error, parse_student_info
@@ -16,6 +16,7 @@ logger = setup_logger(__name__)
 class AuthScraper:
     def __init__(self, session: Optional[requests.Session] = None):
         self.session = session if session else create_session()
+        self._cfg = get_config()
 
     def fetch_login_page(self) -> Dict[str, Any]:
         """
@@ -24,7 +25,7 @@ class AuthScraper:
         """
         try:
             logger.info("Fetching login page...")
-            r = self.session.get(LOGIN_URL, timeout=30)
+            r = self.session.get(self._cfg.login_url, timeout=30)
             
             if r.status_code != 200:
                 logger.error(f"Failed to fetch login page. Status: {r.status_code}")
@@ -53,22 +54,22 @@ class AuthScraper:
         try:
             logger.info(f"Attempting login for user: {username}")
             
+            sel = self._cfg.selectors
             login_data = {
                 **view_state_data,
-                SELECTORS["USERNAME_FIELD"]: username,
-                SELECTORS["PASSWORD_FIELD"]: password,
-                SELECTORS["PASSWORD_FIELD_ALT"]: password,
-                SELECTORS["CAPTCHA_FIELD"]: captcha_code,
-                '__EVENTTARGET': SELECTORS["LOGIN_BTN"],
+                sel["USERNAME_FIELD"]: username,
+                sel["PASSWORD_FIELD"]: password,
+                sel.get("PASSWORD_FIELD_ALT", sel["PASSWORD_FIELD"]): password,
+                sel["CAPTCHA_FIELD"]: captcha_code,
+                '__EVENTTARGET': sel["LOGIN_BTN"],
                 '__EVENTARGUMENT': '',
-                SELECTORS["SCREEN_WIDTH"]: '1920',
-                SELECTORS["SCREEN_HEIGHT"]: '1080'
+                sel.get("SCREEN_WIDTH", "txt_scrWidth"): '1920',
+                sel.get("SCREEN_HEIGHT", "txt_scrHeight"): '1080',
             }
             
-            # Remove conflicting button key if exists
-            login_data.pop(SELECTORS["LOGIN_BTN"], None)
+            login_data.pop(sel["LOGIN_BTN"], None)
             
-            response = self.session.post(LOGIN_URL, data=login_data, allow_redirects=False, timeout=45)
+            response = self.session.post(self._cfg.login_url, data=login_data, allow_redirects=False, timeout=45)
             logger.debug(f"Login POST status: {response.status_code}")
             
             # Case 1: Successful login (Redirect)
@@ -80,9 +81,8 @@ class AuthScraper:
                     # CRITICAL FIX: Follow the redirect (start.aspx?gkm=...) to fully activate the session
                     # Many ASP.NET apps require visiting the landing page with the token to set final cookies
                     
-                    # If redirect URL starts with /, it's already an absolute path from domain root
                     if redirect_url.startswith('/'):
-                        full_redirect_url = f"{OBS_DOMAIN}{redirect_url}"
+                        full_redirect_url = f"{self._cfg.obs_domain}{redirect_url}"
                     else:
                         full_redirect_url = fix_url(redirect_url)
                     
@@ -96,7 +96,7 @@ class AuthScraper:
 
                     student_info = self._scrape_student_info(full_redirect_url)
                     return {
-                        "success": True,
+                        "status": "success",
                         "message": "Giriş başarılı",
                         "cookies": requests.utils.dict_from_cookiejar(self.session.cookies),
                         "student_name": student_info.get("name", "Öğrenci"),
@@ -115,7 +115,7 @@ class AuthScraper:
             # Case 3: Unknown State
             logger.error("Login failed with no error message and no redirect.")
             return {
-                "success": False,
+                "status": "error",
                 "message": "Giriş başarısız. Bilinmeyen sunucu yanıtı.",
                 "error_code": "UNKNOWN_ERROR"
             }
@@ -123,7 +123,7 @@ class AuthScraper:
         except Exception as e:
             logger.exception("Exception in attempt_login")
             return {
-                "success": False,
+                "status": "error",
                 "message": f"Sunucu hatası: {str(e)}",
                 "error_code": "SERVER_ERROR"
             }
@@ -136,14 +136,10 @@ class AuthScraper:
         result = {"name": "Öğrenci", "profile_photo": None, "gpa": None}
         
         try:
-            # We explicitly want to check the dashboard for AGNO
-            from core.config import DASHBOARD_URL
-            
-            # Prioritize DASHBOARD_URL for AGNO
-            targets = [DASHBOARD_URL, dashboard_url]
+            targets = [self._cfg.dashboard_url, dashboard_url]
             
             headers = {
-                 "Referer": DEFAULT_REFERER
+                 "Referer": self._cfg.default_referer
             }
 
             for url in targets:
