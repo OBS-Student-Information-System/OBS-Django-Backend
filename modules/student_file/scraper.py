@@ -223,29 +223,22 @@ class StudentFileScraper:
     def _fetch_menu_tab(self, btn_target: str, viewstate_payload: dict) -> list:
         """
         Posts to the student file frame URL simulating a button click on
-        the given ASP.NET UpdatePanel target (e.g. 'btnMenu1').
+        the given menu target (e.g. 'btnMenu1'). The OBS page uses standard
+        __doPostBack() full postback, NOT UpdatePanel async – so we POST
+        as a normal form submit and get full HTML back.
         Returns the parsed grid rows, or an empty list if none found.
         """
         post_data = {
             **viewstate_payload,
             '__EVENTTARGET':   btn_target,
             '__EVENTARGUMENT': '',
-            # ScriptManager header – field name must match the control's
-            # ClientID and the value format is "UpdatePanelID|ButtonID".
-            # Using full ctl00$... paths is wrong; the page uses short IDs.
-            'ScriptManager1': f'UpdatePanel1|{btn_target}',
-            '__ASYNCPOST':   'true',
         }
 
-        # UpdatePanel POST needs specific headers to be treated correctly
         headers = {
             'Referer':          _get_cfg().student_file_frame_url,
-            'Sec-Fetch-Dest':   'empty',
-            'Sec-Fetch-Mode':   'cors',
-            'Sec-Fetch-Site':   'same-origin',
-            'X-MicrosoftAjax':  'Delta=true',
-            'X-Requested-With': 'XMLHttpRequest',
             'Content-Type':     'application/x-www-form-urlencoded; charset=UTF-8',
+            'Sec-Fetch-Dest':   'document',
+            'Sec-Fetch-Mode':   'navigate',
         }
 
         resp = self.session.post(
