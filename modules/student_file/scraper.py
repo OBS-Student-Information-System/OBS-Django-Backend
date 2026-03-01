@@ -253,7 +253,15 @@ class StudentFileScraper:
         #   length|type|id|content|...
         # We need to extract the HTML fragment embedded within it.
         html_fragment = self._extract_updatepanel_html(resp.text)
-        return self._parse_grid(html_fragment)
+        try:
+            return self._parse_grid(html_fragment)
+        except Exception as exc:
+            logger.warning(
+                "Parse failed for %s (unexpected table structure or missing grdStyle?): %s",
+                btn_target,
+                exc,
+            )
+            return []
 
     # -------------------------------------------------------------------
     # Private: ASP.NET UpdatePanel delta response parser
@@ -324,14 +332,25 @@ class StudentFileScraper:
 
     def _parse_grid(self, html_content: str) -> list:
         """
-        Parses an HTML fragment for a <table class='grdStyle'> and returns
-        its rows as a list of dicts keyed by normalized column headers.
+        Parses an HTML fragment for a grid table and returns its rows as a
+        list of dicts keyed by normalized column headers.
+
+        Prefers <table class='grdStyle'>. Falls back to any table with class
+        containing 'grd', then first table. Some OBS pages use different classes.
 
         Rows containing no data, non-breaking spaces only, or the Turkish
         phrase 'kayıt bulunamadı' ('no record found') are discarded.
         """
         soup = BeautifulSoup(html_content, 'html.parser')
         table = soup.find('table', {'class': 'grdStyle'})
+        if not table:
+            for t in soup.find_all('table'):
+                classes = t.get('class') or []
+                if any('grd' in str(c).lower() for c in classes):
+                    table = t
+                    break
+        if not table:
+            table = soup.find('table')
         if not table:
             return []
 
