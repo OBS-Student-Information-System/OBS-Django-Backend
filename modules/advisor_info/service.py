@@ -44,3 +44,25 @@ class AdvisorInfoService(IAdvisorInfoService):
             "error_code": result.get("error_code", "ADVISOR_INFO_FETCH_ERROR"),
         }
 
+    def get_advisor_schedule(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
+        if cookies:
+            self.update_session_cookies(cookies)
+
+        logger.info("Fetching Advisor schedule...")
+        result = self.scraper.fetch_advisor_schedule()
+
+        if result.get("status") == "success":
+            return {
+                "status": "success",
+                "data": result.get("data", {}),
+                "message": "Danışman ders programı başarıyla çekildi.",
+            }
+
+        return {
+            "status": "error",
+            "message": result.get(
+                "message", "Danışman ders programı alınırken bir hata oluştu."
+            ),
+            "error_code": result.get("error_code", "ADVISOR_SCHEDULE_FETCH_ERROR"),
+        }
+

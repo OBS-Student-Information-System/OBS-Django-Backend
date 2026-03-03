@@ -80,3 +80,7 @@ class IAdvisorInfoService(IService):
     def get_advisor_info(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
         pass
 
+    @abstractmethod
+    def get_advisor_schedule(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
+        pass
+

@@ -160,6 +160,24 @@ def handle_get_advisor_info(body, context):
     context._send_json_response(result)
 
 
+def handle_get_advisor_schedule(body, context):
+    cookies = body.get('cookies', {})
+    if not cookies:
+        context._send_response(
+            401,
+            {
+                "status": "error",
+                "message": "Oturum yok",
+                "error_code": "NO_SESSION",
+            },
+        )
+        return
+
+    advisor_service = ServiceFactory.create_advisor_info_service()
+    result = advisor_service.get_advisor_schedule(cookies=cookies)
+    context._send_json_response(result)
+
+
 # --- Dispatcher Configuration ---
 dispatcher = ActionDispatcher()
 dispatcher.register('init_login', handle_init_login)
@@ -175,6 +193,7 @@ dispatcher.register('get_personal_info', handle_get_personal_info)
 dispatcher.register('update_personal_info', handle_update_personal_info)
 dispatcher.register('get_student_file', handle_get_student_file)
 dispatcher.register('get_advisor_info', handle_get_advisor_info)
+dispatcher.register('get_advisor_schedule', handle_get_advisor_schedule)
 
 
 class handler(BaseHTTPRequestHandler):
