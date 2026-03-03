@@ -175,7 +175,7 @@ def handle_get_advisor_schedule(body, context):
 
     advisor_service = ServiceFactory.create_advisor_info_service()
     result = advisor_service.get_advisor_schedule(cookies=cookies)
-    context._send_json_response(result)
+    context._send_json_response(result) 
 
 
 # --- Dispatcher Configuration ---
