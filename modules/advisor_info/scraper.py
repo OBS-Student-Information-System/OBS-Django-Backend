@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 from bs4 import BeautifulSoup
 from core.utils import create_session
 from core.tenant_config import get_config
+from modules.schedule.scraper import ScheduleScraper
 import urllib.parse
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ class AdvisorInfoScraper:
         self.caller_url = cfg.scraper.url_for("advisor_info_caller")
         self.frame_url = cfg.scraper.url_for("advisor_info_frame")
         self._default_referer = cfg.default_referer
+        self._schedule_scraper = ScheduleScraper()
 
     def fetch_advisor_info(self) -> Dict[str, Any]:
         """
@@ -149,5 +151,105 @@ class AdvisorInfoScraper:
                 "status": "error",
                 "message": "Danışman bilgileri ayrıştırma hatası",
                 "error_code": "ADVISOR_INFO_PARSE_ERROR",
+            }
+
+    def fetch_advisor_schedule(self) -> Dict[str, Any]:
+        """
+        Fetches the advisor's schedule by simulating __doPostBack('btnYazdir','')
+        on the ogr_danisman.aspx frame.
+
+        The returned HTML is parsed using the existing schedule parser so that
+        the schema matches the standard ScheduleItem/WeeklySchedule structure.
+        """
+        if not self.session.cookies:
+            logger.error("No cookies found, cannot fetch advisor schedule.")
+            return {
+                "status": "error",
+                "message": "Oturum bulunamadı",
+                "error_code": "NO_SESSION",
+            }
+
+        try:
+            # Step 1: Warm up caller
+            self.session.headers.update({
+                "Referer": self._default_referer,
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "same-origin",
+            })
+            logger.info("Accessing Advisor Info caller page for schedule...")
+            self.session.get(self.caller_url, timeout=self._cfg.scraper.timeout_seconds)
+
+            # Step 2: Fetch frame to obtain viewstate / hidden fields
+            self.session.headers.update({
+                "Referer": self.caller_url,
+                "Sec-Fetch-Dest": "iframe",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "same-origin",
+            })
+            logger.info("Fetching Advisor Info frame before schedule postback...")
+            frame_resp = self.session.get(
+                self.frame_url, timeout=self._cfg.scraper.timeout_seconds
+            )
+            frame_resp.raise_for_status()
+
+            if "login.aspx" in frame_resp.url.lower():
+                logger.warning("Session expired while preparing advisor schedule.")
+                return {
+                    "status": "error",
+                    "message": "Oturum süresi doldu",
+                    "error_code": "SESSION_EXPIRED",
+                }
+
+            soup = BeautifulSoup(frame_resp.text, "html.parser")
+            hidden_fields = {}
+            for hidden in soup.find_all("input", type="hidden"):
+                name = hidden.get("name")
+                if name:
+                    hidden_fields[name] = hidden.get("value", "")
+
+            # Step 3: Simulate __doPostBack('btnYazdir','')
+            post_data = {
+                **hidden_fields,
+                "__EVENTTARGET": "btnYazdir",
+                "__EVENTARGUMENT": "",
+            }
+
+            self.session.headers.update({
+                "Referer": self.frame_url,
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "same-origin",
+            })
+            logger.info("Posting btnYazdir to fetch advisor schedule...")
+            resp = self.session.post(
+                self.frame_url,
+                data=post_data,
+                timeout=self._cfg.scraper.timeout_seconds,
+                allow_redirects=True,
+            )
+            resp.raise_for_status()
+
+            if "login.aspx" in resp.url.lower():
+                logger.warning("Session expired during advisor schedule fetch.")
+                return {
+                    "status": "error",
+                    "message": "Oturum süresi doldu",
+                    "error_code": "SESSION_EXPIRED",
+                }
+
+            schedule = self._schedule_scraper.parse_schedule(resp.text)
+            return {
+                "status": "success",
+                "data": schedule,
+            }
+
+        except Exception as exc:
+            logger.exception("Error fetching advisor schedule")
+            return {
+                "status": "error",
+                "message": f"Danışman ders programı alınamadı: {exc}",
+                "error_code": "ADVISOR_SCHEDULE_FETCH_ERROR",
             }
 
