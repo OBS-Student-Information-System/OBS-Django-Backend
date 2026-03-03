@@ -3,7 +3,6 @@ from typing import Dict, Any, Optional
 from bs4 import BeautifulSoup
 from core.utils import create_session
 from core.tenant_config import get_config
-from modules.schedule.scraper import ScheduleScraper
 import urllib.parse
 
 logger = logging.getLogger(__name__)
@@ -28,7 +27,6 @@ class AdvisorInfoScraper:
         self.caller_url = cfg.scraper.url_for("advisor_info_caller")
         self.frame_url = cfg.scraper.url_for("advisor_info_frame")
         self._default_referer = cfg.default_referer
-        self._schedule_scraper = ScheduleScraper()
 
     def fetch_advisor_info(self) -> Dict[str, Any]:
         """
@@ -239,7 +237,7 @@ class AdvisorInfoScraper:
                     "error_code": "SESSION_EXPIRED",
                 }
 
-            schedule = self._schedule_scraper.parse_schedule(resp.text)
+            schedule = self._parse_advisor_schedule_html(resp.text)
             return {
                 "status": "success",
                 "data": schedule,
@@ -252,4 +250,58 @@ class AdvisorInfoScraper:
                 "message": f"Danışman ders programı alınamadı: {exc}",
                 "error_code": "ADVISOR_SCHEDULE_FETCH_ERROR",
             }
+
+    def _parse_advisor_schedule_html(self, html: str) -> Dict[str, Any]:
+        """
+        Parses the advisor timetable HTML (oe_time_table.aspx) into the same
+        WeeklySchedule JSON shape used by the student schedule endpoint.
+
+        OBS renders one table per day:
+          grd0 -> Monday ("1"), grd1 -> Tuesday ("2"), ..., grd5 -> Saturday ("6")
+        Each table has columns: Saat, Ders Kodu, Ders Adı, Derslik.
+        """
+        soup = BeautifulSoup(html, "html.parser")
+        schedule: Dict[str, Any] = {}
+
+        # Map table index to string day key used in frontend (1..6)
+        for idx in range(6):
+            table = soup.find("table", id=f"grd{idx}")
+            if not table:
+                continue
+
+            rows = table.find_all("tr")
+            if len(rows) <= 1:
+                continue
+
+            lessons = []
+            for row in rows[1:]:
+                cells = row.find_all("td")
+                if len(cells) < 4:
+                    continue
+
+                time = cells[0].get_text(strip=True)
+                code = cells[1].get_text(strip=True)
+                name = cells[2].get_text(strip=True)
+                location = cells[3].get_text(strip=True)
+
+                if not (time or code or name or location):
+                    continue
+
+                lessons.append(
+                    {
+                        "time": time,
+                        "code": code,
+                        "name": name,
+                        "location": location,
+                        # Lecturer bilgisi tabloda ayrıca yok; opsiyonel olduğu için boş bırakıyoruz.
+                        "lecturer": "",
+                        "is_practice": False,
+                    }
+                )
+
+            if lessons:
+                day_key = str(idx + 1)  # "1".."6"
+                schedule[day_key] = lessons
+
+        return schedule
 
