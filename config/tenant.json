@@ -82,7 +82,9 @@
             "personal_info_frame": "ogr_ozluk.aspx",
             "student_file_caller": "caller.aspx?curPage=111",
             "student_file_frame": "ogr_genel_bilgiler.aspx",
-            "user_manual": "caller.aspx?curPage=98"
+            "user_manual": "caller.aspx?curPage=98",
+            "advisor_info_caller": "caller.aspx?curPage=102",
+            "advisor_info_frame": "ogr_danisman.aspx"
         },
         "timeout_seconds": 10,
         "error_strings": {

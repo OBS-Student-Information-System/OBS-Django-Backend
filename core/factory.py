@@ -12,10 +12,18 @@ from modules.food.service import FoodService
 from modules.user_manual.service import UserManualService
 from modules.personal_info.service import PersonalInfoService
 from modules.student_file.service import StudentFileService
+from modules.advisor_info.service import AdvisorInfoService
 from core.interfaces import (
-    IAuthService, IGradesService, IScheduleService, 
-    ICalendarService, ITranscriptService, IFoodService,
-    IUserManualService, IPersonalInfoService, IStudentFileService
+    IAuthService,
+    IGradesService,
+    IScheduleService,
+    ICalendarService,
+    ITranscriptService,
+    IFoodService,
+    IUserManualService,
+    IPersonalInfoService,
+    IStudentFileService,
+    IAdvisorInfoService,
 )
 
 class ServiceFactory:
@@ -60,3 +68,7 @@ class ServiceFactory:
     @staticmethod
     def create_student_file_service() -> IStudentFileService:
         return StudentFileService()
+
+    @staticmethod
+    def create_advisor_info_service() -> IAdvisorInfoService:
+        return AdvisorInfoService()

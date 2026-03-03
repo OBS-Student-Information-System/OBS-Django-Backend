@@ -75,3 +75,8 @@ class IStudentFileService(IService):
     def get_student_file(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
         pass
 
+class IAdvisorInfoService(IService):
+    @abstractmethod
+    def get_advisor_info(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
+        pass
+

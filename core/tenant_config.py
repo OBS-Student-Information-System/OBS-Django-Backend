@@ -49,6 +49,8 @@ _REQUIRED_SCRAPER_ENDPOINTS = frozenset({
     "student_file_caller",
     "student_file_frame",
     "user_manual",
+    "advisor_info_caller",
+    "advisor_info_frame",
 })
 
 
