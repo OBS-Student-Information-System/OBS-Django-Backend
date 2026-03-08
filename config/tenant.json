@@ -86,7 +86,9 @@
             "advisor_info_caller": "caller.aspx?curPage=102",
             "advisor_info_frame": "ogr_danisman.aspx",
             "gpa_history_caller": "caller.aspx?curPage=122",
-            "gpa_history_frame": "ogrenci_donem_ortalamalari.aspx"
+            "gpa_history_frame": "ogrenci_donem_ortalamalari.aspx",
+            "department_schedule_caller": "caller.aspx?curPage=125",
+            "department_schedule_frame": "std_time_table_dep.aspx"
         },
         "timeout_seconds": 10,
         "error_strings": {

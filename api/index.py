@@ -196,6 +196,23 @@ def handle_get_gpa_history(body, context):
     context._send_json_response(result)
 
 
+def handle_get_department_schedule(body, context):
+    cookies = body.get("cookies", {})
+    if not cookies:
+        context._send_response(
+            401,
+            {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"},
+        )
+        return
+    term_id = body.get("term_id")
+
+    department_schedule_service = ServiceFactory.create_department_schedule_service()
+    result = department_schedule_service.get_department_schedule(
+        cookies=cookies, term_id=term_id
+    )
+    context._send_json_response(result)
+
+
 # --- Dispatcher Configuration ---
 dispatcher = ActionDispatcher()
 dispatcher.register('init_login', handle_init_login)
@@ -213,6 +230,7 @@ dispatcher.register('get_student_file', handle_get_student_file)
 dispatcher.register('get_advisor_info', handle_get_advisor_info)
 dispatcher.register('get_advisor_schedule', handle_get_advisor_schedule)
 dispatcher.register('get_gpa_history', handle_get_gpa_history)
+dispatcher.register('get_department_schedule', handle_get_department_schedule)
 
 
 class handler(BaseHTTPRequestHandler):

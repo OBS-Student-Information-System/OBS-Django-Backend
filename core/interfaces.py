@@ -90,3 +90,13 @@ class IGpaHistoryService(IService):
     def get_gpa_history(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
         pass
 
+
+class IDepartmentScheduleService(IService):
+    @abstractmethod
+    def get_department_schedule(
+        self,
+        cookies: Dict[str, str] = None,
+        term_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        pass
+

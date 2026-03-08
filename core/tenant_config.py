@@ -53,6 +53,8 @@ _REQUIRED_SCRAPER_ENDPOINTS = frozenset({
     "advisor_info_frame",
     "gpa_history_caller",
     "gpa_history_frame",
+    "department_schedule_caller",
+    "department_schedule_frame",
 })
 
 
