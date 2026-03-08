@@ -84,7 +84,9 @@
             "student_file_frame": "ogr_genel_bilgiler.aspx",
             "user_manual": "caller.aspx?curPage=98",
             "advisor_info_caller": "caller.aspx?curPage=102",
-            "advisor_info_frame": "ogr_danisman.aspx"
+            "advisor_info_frame": "ogr_danisman.aspx",
+            "gpa_history_caller": "caller.aspx?curPage=122",
+            "gpa_history_frame": "ogrenci_donem_ortalamalari.aspx"
         },
         "timeout_seconds": 10,
         "error_strings": {

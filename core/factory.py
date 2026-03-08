@@ -13,6 +13,7 @@ from modules.user_manual.service import UserManualService
 from modules.personal_info.service import PersonalInfoService
 from modules.student_file.service import StudentFileService
 from modules.advisor_info.service import AdvisorInfoService
+from modules.gpa_history.service import GpaHistoryService
 from core.interfaces import (
     IAuthService,
     IGradesService,
@@ -24,6 +25,7 @@ from core.interfaces import (
     IPersonalInfoService,
     IStudentFileService,
     IAdvisorInfoService,
+    IGpaHistoryService,
 )
 
 class ServiceFactory:
@@ -72,3 +74,7 @@ class ServiceFactory:
     @staticmethod
     def create_advisor_info_service() -> IAdvisorInfoService:
         return AdvisorInfoService()
+
+    @staticmethod
+    def create_gpa_history_service() -> IGpaHistoryService:
+        return GpaHistoryService()

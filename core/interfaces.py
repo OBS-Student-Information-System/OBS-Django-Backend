@@ -84,3 +84,9 @@ class IAdvisorInfoService(IService):
     def get_advisor_schedule(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
         pass
 
+
+class IGpaHistoryService(IService):
+    @abstractmethod
+    def get_gpa_history(self, cookies: Dict[str, str] = None) -> Dict[str, Any]:
+        pass
+

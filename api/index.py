@@ -175,7 +175,25 @@ def handle_get_advisor_schedule(body, context):
 
     advisor_service = ServiceFactory.create_advisor_info_service()
     result = advisor_service.get_advisor_schedule(cookies=cookies)
-    context._send_json_response(result) 
+    context._send_json_response(result)
+
+
+def handle_get_gpa_history(body, context):
+    cookies = body.get('cookies', {})
+    if not cookies:
+        context._send_response(
+            401,
+            {
+                "status": "error",
+                "message": "Oturum yok",
+                "error_code": "NO_SESSION",
+            },
+        )
+        return
+
+    gpa_history_service = ServiceFactory.create_gpa_history_service()
+    result = gpa_history_service.get_gpa_history(cookies=cookies)
+    context._send_json_response(result)
 
 
 # --- Dispatcher Configuration ---
@@ -194,6 +212,7 @@ dispatcher.register('update_personal_info', handle_update_personal_info)
 dispatcher.register('get_student_file', handle_get_student_file)
 dispatcher.register('get_advisor_info', handle_get_advisor_info)
 dispatcher.register('get_advisor_schedule', handle_get_advisor_schedule)
+dispatcher.register('get_gpa_history', handle_get_gpa_history)
 
 
 class handler(BaseHTTPRequestHandler):
