@@ -269,9 +269,13 @@ class EnrolledCoursesScraper:
                 t_u = cell_text("t_u")
                 class_year = cell_text("class_year")
                 instructor = cell_text("instructor")
-                status_text = cell_text("status_text") or "-"
-                grade_raw = cell_text("grade")
-                grade = grade_raw if grade_raw and grade_raw != "-" else "-"
+                status_text = cell_text("status_text")
+                grade_raw = cell_text("grade").strip()
+                grade = (
+                    grade_raw
+                    if grade_raw and grade_raw not in ("-", "--", "—")
+                    else "-"
+                )
 
                 courses.append(
                     {
@@ -314,20 +318,21 @@ class EnrolledCoursesScraper:
         header_map["course_code"] = find_index("ders kod", "course code")
         header_map["course_name"] = find_index("ders ad", "course name")
         header_map["is_mandatory"] = find_index("z/s", "zorunlu", "seçmeli", "secmeli")
-        header_map["credit"] = find_index("kredi", "credit")
+        header_map["credit"] = find_index("krd", "kredi", "credit")
         header_map["ects"] = find_index("akts", "ects")
         header_map["t_u"] = find_index("t+u", "t/u", "teorik", "uygulama")
-        header_map["class_year"] = find_index("sınıf", "sinif", "yıl", "yil")
+        header_map["class_year"] = find_index("snf", "sınıf", "sinif", "yıl", "yil")
         header_map["instructor"] = find_index(
-            "öğretim elemanı", "ogretim elemani", "öğr. gör", "ogr. gor", "instructor"
+            "öğretim elemanı", "ogretim elemani", "öğr. gör", "ogr. gor",
+            "öğretim el", "instructor",
         )
         header_map["status_text"] = find_index("durum", "status")
-        header_map["grade"] = find_index("harf", "notu", "grade")
+        header_map["grade"] = find_index("not", "harf", "notu", "grade")
 
         # Require at least core fields to consider this a valid table
-        if not header_map["course_code"] and not header_map["course_name"]:
+        if header_map["course_code"] is None and header_map["course_name"] is None:
             return None
-        if header_map["credit"] is None or header_map["ects"] is None:
+        if header_map["credit"] is None and header_map["ects"] is None:
             return None
 
         return header_map
