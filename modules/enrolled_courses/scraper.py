@@ -205,58 +205,68 @@ class EnrolledCoursesScraper:
         """
         Parse enrolled courses table into list of dicts.
 
-        Defensive parsing:
-        - Detect header columns by text (e.g. 'Ders Kodu', 'Z/S', 'AKTS').
-        - Skip rows/cells that don't match expected structure.
+        Strategy:
+        1. Target `id="grdGenel"` directly to avoid nested-table index shift.
+        2. Use `recursive=False` for cell extraction (direct children only).
+        3. Skip footer/pager rows (colspan cells).
+        4. Fall back to generic table scan if grdGenel is absent.
         """
         soup = BeautifulSoup(html, "html.parser")
-        tables = soup.find_all("table")
-        if not tables:
+
+        table = soup.find("table", id="grdGenel")
+        if not table:
+            tables = soup.find_all("table")
+            for t in tables:
+                hdr = self._find_header_row(t)
+                if hdr and self._detect_header_map(hdr):
+                    table = t
+                    break
+
+        if not table:
             logger.warning("No tables found on enrolled courses page.")
             return []
 
-        header_map: Optional[Dict[str, int]] = None
-        target_rows: List[Any] = []
+        tbody = table.find("tbody")
+        container = tbody if tbody else table
+        all_rows = container.find_all("tr", recursive=False)
 
-        for table in tables:
-            header_row = None
-            for tr in table.find_all("tr"):
-                cells = tr.find_all(["th", "td"])
-                if cells:
-                    header_row = tr
-                    break
-            if not header_row:
-                continue
+        header_row = self._find_header_row(table)
+        if not header_row:
+            logger.warning("Header row not found in enrolled courses table.")
+            return []
 
-            header_map = self._detect_header_map(header_row)
-            if not header_map:
-                continue
-
-            # Use this table; collect its data rows
-            for tr in table.find_all("tr")[1:]:
-                tds = tr.find_all("td")
-                if not tds:
-                    continue
-                target_rows.append(tr)
-            if target_rows:
-                break
-
-        if not header_map or not target_rows:
+        header_map = self._detect_header_map(header_row)
+        if not header_map:
             logger.warning("Enrolled courses table with expected headers not found.")
+            return []
+
+        target_rows = []
+        for tr in all_rows:
+            if tr is header_row:
+                continue
+            tds = tr.find_all("td", recursive=False)
+            if not tds:
+                continue
+            if any(td.get("colspan") for td in tds):
+                continue
+            target_rows.append(tr)
+
+        if not target_rows:
+            logger.info("No data rows found in enrolled courses table.")
             return []
 
         courses: List[Dict[str, Any]] = []
         for row in target_rows:
             try:
-                cells = row.find_all("td")
+                cells = row.find_all("td", recursive=False)
                 if not cells:
                     continue
 
-                def cell_text(key: str) -> str:
+                def cell_text(key: str, _cells=cells) -> str:
                     idx = header_map.get(key)
-                    if idx is None or idx >= len(cells):
+                    if idx is None or idx >= len(_cells):
                         return ""
-                    return (cells[idx].get_text(strip=True) or "").strip()
+                    return (_cells[idx].get_text(strip=True) or "").strip()
 
                 course_code = cell_text("course_code")
                 course_name = cell_text("course_name")
@@ -299,12 +309,22 @@ class EnrolledCoursesScraper:
 
         return courses
 
+    @staticmethod
+    def _find_header_row(table):
+        """Return the first <tr> containing <th> elements (direct children)."""
+        tbody = table.find("tbody")
+        container = tbody if tbody else table
+        for tr in container.find_all("tr", recursive=False):
+            if tr.find("th", recursive=False):
+                return tr
+        return None
+
     def _detect_header_map(self, header_row) -> Optional[Dict[str, int]]:
         """
         Inspect header cells and map logical keys to column indices.
-        Does not assume exact order; matches by Turkish/English phrases.
+        Uses `recursive=False` to avoid picking up nested elements.
         """
-        cells = header_row.find_all(["th", "td"])
+        cells = header_row.find_all(["th", "td"], recursive=False)
         labels = [(c.get_text(strip=True) or "").lower() for c in cells]
 
         def find_index(*keywords: str) -> Optional[int]:
@@ -329,7 +349,6 @@ class EnrolledCoursesScraper:
         header_map["status_text"] = find_index("durum", "status")
         header_map["grade"] = find_index("not", "harf", "notu", "grade")
 
-        # Require at least core fields to consider this a valid table
         if header_map["course_code"] is None and header_map["course_name"] is None:
             return None
         if header_map["credit"] is None and header_map["ects"] is None:
