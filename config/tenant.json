@@ -88,7 +88,9 @@
             "gpa_history_caller": "caller.aspx?curPage=122",
             "gpa_history_frame": "ogrenci_donem_ortalamalari.aspx",
             "department_schedule_caller": "caller.aspx?curPage=125",
-            "department_schedule_frame": "std_time_table_dep.aspx"
+            "department_schedule_frame": "std_time_table_dep.aspx",
+            "enrolled_courses_caller": "caller.aspx?curPage=103",
+            "enrolled_courses_frame": "ogr_alinan_dersler.aspx"
         },
         "timeout_seconds": 10,
         "error_strings": {

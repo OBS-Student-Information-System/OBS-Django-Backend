@@ -15,6 +15,7 @@ from modules.student_file.service import StudentFileService
 from modules.advisor_info.service import AdvisorInfoService
 from modules.gpa_history.service import GpaHistoryService
 from modules.department_schedule.service import DepartmentScheduleService
+from modules.enrolled_courses.service import EnrolledCoursesService
 from core.interfaces import (
     IAuthService,
     IGradesService,
@@ -28,6 +29,7 @@ from core.interfaces import (
     IAdvisorInfoService,
     IGpaHistoryService,
     IDepartmentScheduleService,
+    IEnrolledCoursesService,
 )
 
 class ServiceFactory:
@@ -84,3 +86,7 @@ class ServiceFactory:
     @staticmethod
     def create_department_schedule_service() -> IDepartmentScheduleService:
         return DepartmentScheduleService()
+
+    @staticmethod
+    def create_enrolled_courses_service() -> IEnrolledCoursesService:
+        return EnrolledCoursesService()

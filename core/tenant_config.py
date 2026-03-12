@@ -55,6 +55,8 @@ _REQUIRED_SCRAPER_ENDPOINTS = frozenset({
     "gpa_history_frame",
     "department_schedule_caller",
     "department_schedule_frame",
+    "enrolled_courses_caller",
+    "enrolled_courses_frame",
 })
 
 

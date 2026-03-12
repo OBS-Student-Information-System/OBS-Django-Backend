@@ -100,3 +100,14 @@ class IDepartmentScheduleService(IService):
     ) -> Dict[str, Any]:
         pass
 
+
+class IEnrolledCoursesService(IService):
+    @abstractmethod
+    def get_enrolled_courses(
+        self,
+        cookies: Dict[str, str] = None,
+        term_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Return enrolled courses list in standard envelope."""
+        pass
+
