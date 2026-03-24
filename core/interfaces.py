@@ -121,3 +121,13 @@ class IOfferedCoursesService(IService):
         """Return offered department courses in standard envelope."""
         pass
 
+
+class ITuitionFeesService(IService):
+    @abstractmethod
+    def get_tuition_fees(
+        self,
+        cookies: Dict[str, str] = None,
+    ) -> Dict[str, Any]:
+        """Return tuition & fees in standard envelope."""
+        pass
+

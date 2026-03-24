@@ -17,6 +17,7 @@ from modules.gpa_history.service import GpaHistoryService
 from modules.department_schedule.service import DepartmentScheduleService
 from modules.enrolled_courses.service import EnrolledCoursesService
 from modules.offered_courses.service import OfferedCoursesService
+from modules.tuition_fees.service import TuitionFeesService
 from core.interfaces import (
     IAuthService,
     IGradesService,
@@ -32,6 +33,7 @@ from core.interfaces import (
     IDepartmentScheduleService,
     IEnrolledCoursesService,
     IOfferedCoursesService,
+    ITuitionFeesService,
 )
 
 class ServiceFactory:
@@ -96,3 +98,7 @@ class ServiceFactory:
     @staticmethod
     def create_offered_courses_service() -> IOfferedCoursesService:
         return OfferedCoursesService()
+
+    @staticmethod
+    def create_tuition_fees_service() -> ITuitionFeesService:
+        return TuitionFeesService()

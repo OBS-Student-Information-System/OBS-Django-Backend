@@ -59,6 +59,8 @@ _REQUIRED_SCRAPER_ENDPOINTS = frozenset({
     "enrolled_courses_frame",
     "offered_courses_caller",
     "offered_courses_frame",
+    "tuition_fees_caller",
+    "tuition_fees_frame",
 })
 
 
