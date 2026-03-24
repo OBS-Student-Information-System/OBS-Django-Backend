@@ -1,89 +1,177 @@
-# OBS Backend - Service Oriented Architecture
+# OBS Backend
 
-OBS Mobile Application için geliştirilmiş, **Service-Oriented** (Servis Odaklı) bir Python Backend projesidir. (Not: Klasör isminde Django geçse de, performans ve sadelik için saf **Python `http.server`** kullanılmıştır.)
+OBS Mobil Uygulaması için geliştirilmiş, **Service-Oriented** Python Backend.
 
-## 🏗 Mimari Felsefe: "The Facade"
-Bu backend, mobil uygulamanın OBS sistemine erişmesi için bir **Vekil Sunucu (Proxy/Adapter)** görevi görür.
+> Klasör adında "Django" geçse de, sadelik ve performans adına saf **Python `http.server`** kullanılmaktadır. Vercel üzerinde serverless function olarak deploy edilir.
 
-### 🔌 Service Layer & Frontend Decoupling
-Frontend (Flutter Mobile App) **ASLA** backend'in veriyi nereden bulduğunu bilmez.
-*   Veri şu an **Scraping** yöntemiyle [obs.ozal.edu.tr](https://obs.ozal.edu.tr) adresinden anlık çekilmektedir.
-*   Gelecekte veri **PostgreSQL** veya başka bir **Veritabanından** gelebilir.
-*   **ÖNEMLİ:** Backend'in veri kaynağı değişse bile, Frontend'e sunduğu JSON formatı (Contract) **ASLA** değişmeyecektir.
+## Mimari
 
-### 🚀 Stale-While-Revalidate Desteği
-Backend, Frontend'in **Stale-While-Revalidate** (Önce önbelleği göster, sonra güncel veriyi çek) yapısına tam uyumludur.
-1.  **Stateless Görünüm:** API her ne kadar session tabanlı bir siteyi scrape etse de, dışarıya **Stateless** bir REST API gibi davranır.
-2.  **Kararlı Yapı:** Scraper hata alsa bile backend standart bir hata mesajı ("envelope") döner, böylece frontend önbellekteki veriyi göstermeye devam edebilir.
+```
+Client (Flutter)  ──POST──▶  api/index.py  ──ActionDispatcher──▶  Service  ──▶  Scraper
+                                                                      │
+                                                          Standard JSON Envelope
+                                                       { status, data, message }
+```
 
-## 🔄 Kritik İş Akışları (Key Workflows)
+Backend, OBS web portalına bir **Adapter/Facade** görevi görür:
 
-### 🔐 Login Flow & Cookie Relay
-1.  **Init:** Client -> Backend (`init_login`) -> Backend OBS'den Captcha ve ViewState çeker.
-2.  **Auth:** Client -> Backend (`login`) -> Backend OBS'ye POST atar.
-    *   *Kritik:* Eğer redirect gelirse, backend `start.aspx` sayfasına giderek cookie'leri sabitler.
-3.  **Session:** Backend -> Client'a şifrelenmiş veya ham `Session Cookies` döner. Client bunu saklar.
+- **Stateless API** — Oturum cookie'leri client tarafında saklanır; backend her istekte cookie'leri alır, işini yapar, sonucu döner.
+- **Kararlı Contract** — Veri kaynağı (scraping, DB, API) ne olursa olsun, frontend'e sunulan JSON yapısı değişmez.
+- **Standard Envelope** — Her yanıt `{ "status": "success" | "error", "data": ..., "message": "...", "error_code": "..." }` formatındadır.
+- **SWR Uyumlu** — Frontend Stale-While-Revalidate kullanır; backend hata alsa bile standart envelope döndüğü için frontend önbelleği göstermeye devam eder.
 
-### 📝 Grades Flow
-1.  **Request:** Client -> Backend (`get_grades`) + `Cookies`.
-2.  **Restoration:** Backend cookie'leri requests session'ına yükler.
-3.  **Switching:** Eğer dönem değişikliği isteniyorsa, Backend `__EVENTTARGET` postback simülasyonu ile dönem değiştirir.
-4.  **Parsing:** HTML tablo parse edilir ve JSON array döner.
+## Proje Yapısı
 
-### 📜 Transcript & User Manual Flow (Iframe/Caller)
-1.  **Request:** Client -> Backend (`get_transcript` veya `get_user_manual`).
-2.  **Navigation:** Scraper, tarayıcı taklidi yaparak (`Sec-Fetch-Dest: document`) doğrudan `caller.aspx` adresine gider.
-3.  **Result:** OBS'den dönen PDF stream'i yakalanır ve client'a verilir (veya base64/binary).
+```
+OBS-Django-Backend/
+├── api/
+│   └── index.py                 # Giriş noktası — HTTP handler + ActionDispatcher
+├── core/
+│   ├── exceptions.py            # Custom exception sınıfları
+│   ├── factory.py               # ServiceFactory (Dependency Injection)
+│   ├── interfaces.py            # Servis arayüzleri (ABC)
+│   ├── logger.py                # Loglama yapılandırması
+│   ├── router.py                # ActionDispatcher (action → handler eşlemesi)
+│   ├── tenant_config.py         # Tenant config yükleyici ve doğrulayıcı
+│   ├── types.py                 # TypedDict DTO tanımları
+│   └── utils.py                 # Ortak yardımcılar (create_session, get_hidden_inputs vb.)
+├── config/
+│   └── tenant.json              # Tenant yapılandırması (URL'ler, selector'lar, endpoint'ler)
+├── modules/
+│   ├── auth/                    # Giriş, captcha, oturum
+│   ├── grades/                  # Notlar, dönem seçimi
+│   ├── enrolled_courses/        # Alınan dersler
+│   ├── schedule/                # Haftalık ders programı
+│   ├── department_schedule/     # Bölüm ders programı
+│   ├── transcript/              # Transkript (PDF)
+│   ├── student_file/            # Öğrenci dosyası
+│   ├── personal_info/           # Kişisel bilgiler
+│   ├── advisor_info/            # Danışman bilgileri
+│   ├── gpa_history/             # GNO geçmişi
+│   ├── calendar/                # Akademik takvim
+│   ├── food/                    # Yemek listesi (public)
+│   └── user_manual/             # Kullanım kılavuzu (PDF)
+├── scripts/
+│   └── run_local.py             # Yerel geliştirme sunucusu
+├── tests/                       # Testler
+├── requirements.txt
+└── README.md
+```
 
-### 📅 Schedule & Calendar
-1.  **Schedule:** `get_schedule` aksiyonu ile öğrencinin haftalık ders programı çekilir ve JSON formatında sunulur.
-2.  **Calendar:** `get_academic_calendar` ile üniversitenin akademik takvimi anlık olarak parse edilir.
+Her modül aynı katmanlı yapıyı izler:
 
-### 👤 Personal Info
-*   **Endpoint:** `get_personal_info`
-*   **Logic:** Öğrencinin kişisel bilgilerini (ad, soyad, öğrenci numarası vb.) OBS'den çeker ve JSON formatında sunar.
+| Katman | Dosya | Sorumluluk |
+|---|---|---|
+| **Service** | `service.py` | İş mantığı, veriyi formatlar, scraper'ı çağırır |
+| **Scraper** | `scraper.py` | HTTP istekleri, HTML parse, veri çıkarma |
+| **Parser** | `parser.py` | *(opsiyonel)* Saf fonksiyon: HTML → Dict dönüşümü |
 
-### 🍽 Food Menu
-*   **Endpoint:** `food_menu`
-*   **Logic:** OBS dışında SKS Daire Başkanlığı sayfasından yemek listesini çeker.
+## API Referansı
 
-## ⚙️ Yapılandırma (Configuration)
+Tüm istekler **tek bir POST endpoint**'ine gönderilir. İstek gövdesindeki `action` alanı hangi handler'ın çalışacağını belirler.
 
-Tüm "Magic String"ler ve ayarlar `core/config.py` dosyasında merkezi olarak yönetilir:
-*   **URL Sabitleri:** OBS, Login, Grade, Schedule URL'leri.
-*   **HTML Selectors:** Scraper'ın elementleri bulmak için kullandığı ID ve Class'lar. (Site tasarımı değişirse sadece burası güncellenir).
-*   **Headers:** Request atarken kullanılan browser taklidi (User-Agent).
+```
+POST /api
+Content-Type: application/json
 
-## 📂 Klasör Yapısı
+{
+  "action": "get_grades",
+  "cookies": { "ASP.NET_SessionId": "...", ... },
+  "term_id": "20252"       // opsiyonel, bazı action'lar için
+}
+```
 
-*   **`api/`**: Giriş kapısı (Entry Point). HTTP isteklerini karşılar ve Router görevi görür.
-*   **`core/`**: Ortak altyapı.
-    *   `config.py`: Tüm sabitler (URL, Selector, Header).
-    *   `factory.py`: Dependency Injection (ServiceFactory).
-    *   `interfaces.py`: Servis arayüzleri (ABCs).
-    *   `types.py`: TypedDict tanımları (DTOs).
-    *   `router.py`: ActionDispatcher (request routing).
-    *   `utils.py`, `logger.py`: Yardımcı fonksiyonlar ve loglama.
-*   **`modules/`**: İş mantığı (Business Logic).
-    *   **`service.py`**: Dış dünyaya açılan kapı. Veriyi işler, formatlar. Scraper'ı veya Database'i çağırır.
-    *   **`scraper.py`**: Kirli işleri yapar. HTML parse eder, siteye istek atar. "Data Source" katmanıdır.
-    *   **`parser.py`**: *(Bazı modüllerde)* Pure function. HTML → Dict dönüşümü.
-*   **`scripts/`**: Yardımcı araçlar (Local Runner vb.).
-*   **`tests/`**: Test dosyaları.
+### Kayıtlı Action'lar
 
-## 🛠 Kurulum ve Çalıştırma
+| Action | Açıklama | Auth |
+|---|---|---|
+| `init_login` | Captcha ve ViewState çeker | - |
+| `login` | OBS'ye giriş yapar, session cookie döner | - |
+| `get_grades` | Not listesi (dönem seçimi destekler) | Cookie |
+| `get_available_terms` | Kullanılabilir dönem listesi | Cookie |
+| `get_enrolled_courses` | Alınan dersler (dönem seçimi destekler) | Cookie |
+| `get_schedule` | Haftalık ders programı | Cookie |
+| `get_department_schedule` | Bölüm ders programı (sınıf seçimi destekler) | Cookie |
+| `get_transcript` | Transkript (PDF) | Cookie |
+| `get_student_file` | Öğrenci dosyası | Cookie |
+| `get_personal_info` | Kişisel bilgiler | Cookie |
+| `update_personal_info` | Kişisel bilgi güncelleme | Cookie |
+| `get_advisor_info` | Danışman bilgileri | Cookie |
+| `get_advisor_schedule` | Danışman ders programı | Cookie |
+| `get_gpa_history` | GNO geçmişi | Cookie |
+| `get_academic_calendar` | Akademik takvim | - |
+| `food_menu` | Yemek listesi | - |
+| `get_user_manual` | Kullanım kılavuzu (PDF) | Cookie |
 
-1.  Sanal ortamı kurun:
-    ```bash
-    python -m venv venv
-    ./venv/Scripts/activate
-    ```
-2.  Bağımlılıkları yükleyin:
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  Sunucuyu başlatın:
-    ```bash
-    python scripts/run_local.py
-    ```
-    Sunucu `http://localhost:8000` adresinde çalışacaktır.
+### Yanıt Formatı
+
+**Başarılı:**
+```json
+{
+  "status": "success",
+  "data": [ ... ],
+  "message": "Veriler başarıyla getirildi"
+}
+```
+
+**Hata:**
+```json
+{
+  "status": "error",
+  "message": "Oturum süresi doldu",
+  "error_code": "SESSION_EXPIRED"
+}
+```
+
+Yaygın hata kodları: `SESSION_EXPIRED`, `NO_SESSION`, `*_FETCH_ERROR`, `*_SCRAPE_ERROR`
+
+## Scraping Desenleri
+
+### Caller-Frame Pattern
+OBS'nin iframe yapısı nedeniyle bazı sayfalar iki adımda yüklenir:
+1. `caller.aspx?curPage=X` sayfasına GET (navigasyon akışı için gerekli)
+2. Asıl frame sayfasına GET (`Sec-Fetch-Dest: iframe`, `Referer: caller URL`)
+
+Bu desen: `grades`, `enrolled_courses`, `department_schedule`, `transcript`, `schedule` vb. modüllerde kullanılır.
+
+### ASP.NET Postback Simülasyonu
+Dönem/sınıf değişikliği gibi dropdown seçimleri, ASP.NET `__EVENTTARGET` postback mekanizmasıyla simüle edilir. Hidden field'lar (`__VIEWSTATE`, `__EVENTVALIDATION`) mevcut sayfadan parse edilir ve POST edilir.
+
+### Session Lifecycle
+- Client, login sonrası aldığı cookie'leri her istekte gönderir
+- Backend, oturum süresinin dolup dolmadığını URL redirect (`login.aspx`) ve sayfa içeriği kontrolü ile tespit eder
+- Oturum dolmuşsa `SESSION_EXPIRED` döner, frontend kullanıcıyı login'e yönlendirir
+
+## Multi-Tenant Yapılandırma
+
+Tüm URL'ler, HTML selector'lar ve endpoint path'leri `config/tenant.json` dosyasından okunur. Hardcoded değer kullanılmaz. Yapılandırma `core/tenant_config.py` tarafından yüklenir ve doğrulanır.
+
+```json
+{
+  "tenant_id": "mtu",
+  "institution": { "name": "...", "obs_base_url": "https://..." },
+  "scraper": {
+    "obs_domain": "...",
+    "selectors": { "TERM_DROPDOWN": "cmbDonemler", ... },
+    "endpoints": { "grades_caller": "caller.aspx?curPage=...", ... }
+  }
+}
+```
+
+## Kurulum
+
+```bash
+python -m venv venv
+venv\Scripts\activate        # Windows
+source venv/bin/activate     # macOS / Linux
+
+pip install -r requirements.txt
+python scripts/run_local.py  # http://localhost:8000
+```
+
+## Teknolojiler
+
+- **Python 3.10+** — Runtime
+- **requests** — HTTP client
+- **BeautifulSoup4 + lxml** — HTML parsing
+- **Vercel** — Serverless deployment

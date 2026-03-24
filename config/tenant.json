@@ -90,7 +90,9 @@
             "department_schedule_caller": "caller.aspx?curPage=125",
             "department_schedule_frame": "std_time_table_dep.aspx",
             "enrolled_courses_caller": "caller.aspx?curPage=103",
-            "enrolled_courses_frame": "ogr_alinan_dersler.aspx"
+            "enrolled_courses_frame": "ogr_alinan_dersler.aspx",
+            "offered_courses_caller": "caller.aspx?curPage=104",
+            "offered_courses_frame": "program_dersleri.aspx"
         },
         "timeout_seconds": 10,
         "error_strings": {

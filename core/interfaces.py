@@ -111,3 +111,13 @@ class IEnrolledCoursesService(IService):
         """Return enrolled courses list in standard envelope."""
         pass
 
+
+class IOfferedCoursesService(IService):
+    @abstractmethod
+    def get_offered_courses(
+        self,
+        cookies: Dict[str, str] = None,
+    ) -> Dict[str, Any]:
+        """Return offered department courses in standard envelope."""
+        pass
+
