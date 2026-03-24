@@ -256,6 +256,20 @@ def handle_get_tuition_fees(body, context):
     context._send_json_response(result)
 
 
+def handle_get_course_registration_summary(body, context):
+    cookies = body.get("cookies", {})
+    if not cookies:
+        context._send_response(
+            401,
+            {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"},
+        )
+        return
+
+    summary_service = ServiceFactory.create_course_registration_summary_service()
+    result = summary_service.get_course_registration_summary(cookies=cookies)
+    context._send_json_response(result)
+
+
 # --- Dispatcher Configuration ---
 dispatcher = ActionDispatcher()
 dispatcher.register('init_login', handle_init_login)
@@ -277,6 +291,7 @@ dispatcher.register('get_department_schedule', handle_get_department_schedule)
 dispatcher.register('get_enrolled_courses', handle_get_enrolled_courses)
 dispatcher.register('get_offered_courses', handle_get_offered_courses)
 dispatcher.register('get_tuition_fees', handle_get_tuition_fees)
+dispatcher.register('get_course_registration_summary', handle_get_course_registration_summary)
 
 
 class handler(BaseHTTPRequestHandler):

@@ -94,7 +94,9 @@
             "offered_courses_caller": "caller.aspx?curPage=104",
             "offered_courses_frame": "program_dersleri.aspx",
             "tuition_fees_caller": "caller.aspx?curPage=110",
-            "tuition_fees_frame": "ogrenci_harc_bilgileri_devlet.aspx"
+            "tuition_fees_frame": "ogrenci_harc_bilgileri_devlet.aspx",
+            "course_registration_summary_caller": "caller.aspx?curPage=200",
+            "course_registration_summary_frame": "ders_kayit_ozet.aspx"
         },
         "timeout_seconds": 10,
         "error_strings": {

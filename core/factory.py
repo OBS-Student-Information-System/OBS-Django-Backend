@@ -18,6 +18,7 @@ from modules.department_schedule.service import DepartmentScheduleService
 from modules.enrolled_courses.service import EnrolledCoursesService
 from modules.offered_courses.service import OfferedCoursesService
 from modules.tuition_fees.service import TuitionFeesService
+from modules.course_registration_summary.service import CourseRegistrationSummaryService
 from core.interfaces import (
     IAuthService,
     IGradesService,
@@ -34,6 +35,7 @@ from core.interfaces import (
     IEnrolledCoursesService,
     IOfferedCoursesService,
     ITuitionFeesService,
+    ICourseRegistrationSummaryService,
 )
 
 class ServiceFactory:
@@ -102,3 +104,7 @@ class ServiceFactory:
     @staticmethod
     def create_tuition_fees_service() -> ITuitionFeesService:
         return TuitionFeesService()
+
+    @staticmethod
+    def create_course_registration_summary_service() -> ICourseRegistrationSummaryService:
+        return CourseRegistrationSummaryService()

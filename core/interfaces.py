@@ -131,3 +131,13 @@ class ITuitionFeesService(IService):
         """Return tuition & fees in standard envelope."""
         pass
 
+
+class ICourseRegistrationSummaryService(IService):
+    @abstractmethod
+    def get_course_registration_summary(
+        self,
+        cookies: Dict[str, str] = None,
+    ) -> Dict[str, Any]:
+        """Return course registration summary in standard envelope."""
+        pass
+
