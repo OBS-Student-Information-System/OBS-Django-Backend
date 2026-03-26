@@ -96,7 +96,9 @@
             "tuition_fees_caller": "caller.aspx?curPage=110",
             "tuition_fees_frame": "ogrenci_harc_bilgileri_devlet.aspx",
             "course_registration_summary_caller": "caller.aspx?curPage=200",
-            "course_registration_summary_frame": "ders_kayit_ozet.aspx"
+            "course_registration_summary_frame": "ders_kayit_ozet.aspx",
+            "interactive_transcript_caller": "caller.aspx?curPage=204",
+            "interactive_transcript_frame": "v_transkript.aspx"
         },
         "timeout_seconds": 10,
         "error_strings": {

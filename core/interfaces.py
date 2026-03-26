@@ -141,3 +141,13 @@ class ICourseRegistrationSummaryService(IService):
         """Return course registration summary in standard envelope."""
         pass
 
+
+class IInteractiveTranscriptService(IService):
+    @abstractmethod
+    def get_interactive_transcript(
+        self,
+        cookies: Dict[str, str] = None,
+    ) -> Dict[str, Any]:
+        """Return interactive transcript (native transcript) in standard envelope."""
+        pass
+
