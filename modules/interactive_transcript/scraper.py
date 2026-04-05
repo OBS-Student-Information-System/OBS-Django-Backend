@@ -196,6 +196,7 @@ class InteractiveTranscriptScraper:
         overall = self._parse_overall_header(soup)
         terms = self._parse_terms(soup)
         return {
+            "department": overall.get("department", ""),
             "cgpa": overall.get("cgpa", ""),
             "total_ects": overall.get("total_ects", ""),
             "terms": terms,
@@ -219,7 +220,8 @@ class InteractiveTranscriptScraper:
             "lblKrediAkts2",
             "lblKrediAkts",
         )
-        return {"cgpa": cgpa, "total_ects": total_ects}
+        department = by_id("lblBolum", "lblFakulte")
+        return {"department": department, "cgpa": cgpa, "total_ects": total_ects}
 
     def _get_baslik_table_from_tr(self, tr) -> Optional[BeautifulSoup]:
         for td in tr.find_all("td", recursive=False):
