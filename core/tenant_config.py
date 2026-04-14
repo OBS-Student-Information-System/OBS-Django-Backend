@@ -65,6 +65,8 @@ _REQUIRED_SCRAPER_ENDPOINTS = frozenset({
     "course_registration_summary_frame",
     "interactive_transcript_caller",
     "interactive_transcript_frame",
+    "curriculum_status_caller",
+    "curriculum_status_frame",
 })
 
 

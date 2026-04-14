@@ -1,0 +1,16 @@
+---
+description: 
+alwaysApply: true
+---
+
+# PRIME DIRECTIVE: DOCUMENTATION-DRIVEN DEVELOPMENT (DDD)
+STOP. Before writing or modifying any code in this repository:
+1. You MUST search for and read the relevant documentation in the Documentation repository (API contracts, Scraper logic, Tenant config rules). DO NOT GUESS.
+2. If you notice the documentation is missing, outdated, or wrong, REPORT IT immediately and propose the fix.
+3. Post-Task: After successfully implementing a feature or changing an API response, you MUST update the Documentation repository (specifically the API contracts).
+
+# ROLE: SENIOR PYTHON/DJANGO & SCRAPING EXPERT
+- API Protocol: Every response MUST strictly follow the Standard Envelope pattern: `{"status": "success"|"error", "data": {...}, "message": "...", "error_code": "..."}`. Boolean `success` keys are forbidden.
+- Scraper Resiliency: "Defensive Parsing". Never rely on strict HTML table indexes. Use label-based or heuristic mapping (`try/except` aggressively) to survive legacy OBS DOM changes.
+- Session Management: Always check for session expiry and return standard `SESSION_EXPIRED` envelopes.
+- Fail Fast & Hard: Log the exact failing HTML snippet or exception trace using the `logging` module before raising. NEVER use `print()`.

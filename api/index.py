@@ -283,6 +283,20 @@ def handle_get_interactive_transcript(body, context):
     context._send_json_response(result)
 
 
+def handle_get_curriculum_status(body, context):
+    cookies = body.get("cookies", {})
+    if not cookies:
+        context._send_response(
+            401,
+            {"status": "error", "message": "Oturum yok", "error_code": "NO_SESSION"},
+        )
+        return
+
+    curriculum_service = ServiceFactory.create_curriculum_status_service()
+    result = curriculum_service.get_curriculum_status(cookies=cookies)
+    context._send_json_response(result)
+
+
 # --- Dispatcher Configuration ---
 dispatcher = ActionDispatcher()
 dispatcher.register('init_login', handle_init_login)
@@ -306,6 +320,7 @@ dispatcher.register('get_offered_courses', handle_get_offered_courses)
 dispatcher.register('get_tuition_fees', handle_get_tuition_fees)
 dispatcher.register('get_course_registration_summary', handle_get_course_registration_summary)
 dispatcher.register('get_interactive_transcript', handle_get_interactive_transcript)
+dispatcher.register('get_curriculum_status', handle_get_curriculum_status)
 
 
 class handler(BaseHTTPRequestHandler):

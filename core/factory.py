@@ -22,6 +22,7 @@ from modules.course_registration_summary.service import CourseRegistrationSummar
 from modules.interactive_transcript.service import (
     InteractiveTranscriptService,
 )
+from modules.curriculum_status.service import CurriculumStatusService
 from core.interfaces import (
     IAuthService,
     IGradesService,
@@ -40,6 +41,7 @@ from core.interfaces import (
     ITuitionFeesService,
     ICourseRegistrationSummaryService,
     IInteractiveTranscriptService,
+    ICurriculumStatusService,
 )
 
 class ServiceFactory:
@@ -116,3 +118,7 @@ class ServiceFactory:
     @staticmethod
     def create_interactive_transcript_service() -> IInteractiveTranscriptService:
         return InteractiveTranscriptService()
+
+    @staticmethod
+    def create_curriculum_status_service() -> ICurriculumStatusService:
+        return CurriculumStatusService()

@@ -151,3 +151,13 @@ class IInteractiveTranscriptService(IService):
         """Return interactive transcript (native transcript) in standard envelope."""
         pass
 
+
+class ICurriculumStatusService(IService):
+    @abstractmethod
+    def get_curriculum_status(
+        self,
+        cookies: Dict[str, str] = None,
+    ) -> Dict[str, Any]:
+        """Return curriculum status roadmap in standard envelope."""
+        pass
+
